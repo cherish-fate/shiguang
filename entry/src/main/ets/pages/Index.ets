@@ -1,5 +1,5 @@
 import { router } from '@kit.ArkUI'
-import { ApiService, CapsuleBrief } from '../services/ApiService'
+import { ApiService, CapsuleBrief } from '../services/MockApiService'
 import {FloatingCardsBySine} from './components/FloatingCardsBySine'
 @Entry
 @Component

@@ -1,7 +1,7 @@
 import { router, promptAction } from '@kit.ArkUI'
 import { LoginTheme } from './models/ThemeConstants'
 import { AuthState } from '../services/UserSessions'
-import { ApiService } from '../services/ApiService'
+import { ApiService } from '../services/MockApiService'
 
 @Entry
 @Component

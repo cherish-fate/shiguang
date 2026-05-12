@@ -1,5 +1,5 @@
 import { router, promptAction } from '@kit.ArkUI'
-import { ApiService, UserProfile, UpdateProfileRequest, UpdatePasswordRequest } from '../services/ApiService'
+import { ApiService, UserProfile, UpdateProfileRequest, UpdatePasswordRequest } from '../services/MockApiService'
 import { picker } from '@kit.CoreFileKit';
 import { showInputDialog } from '../components/InputDialog'
 

@@ -2,7 +2,7 @@ import { router, promptAction } from '@kit.ArkUI'
 //import { geolocation } from '@kit.LocationKit'
 import { geoLocationManager } from '@kit.LocationKit';
 import { CapsuleMapMarker } from './components/CapsuleMapMarker'
-import { ApiService, CapsuleListResponse, EmotionStreamResponse, EmotionStreamItem, CommentResponse } from '../services/ApiService'
+import { ApiService, CapsuleListResponse, EmotionStreamResponse, EmotionStreamItem, CommentResponse } from '../services/MockApiService'
 import {
   CampusId,
   CampusBounds,

@@ -1,5 +1,5 @@
 import { router, promptAction } from '@kit.ArkUI'
-import { ApiService, CapsuleType, PublishCapsuleRequest } from '../services/ApiService'
+import { ApiService, CapsuleType, PublishCapsuleRequest } from '../services/MockApiService'
 //import { picker } from '@kit.MediaLibraryKit'
 //import { audio } from '@kit.MultimediaKit'
 import { BusinessError } from '@kit.BasicServicesKit'

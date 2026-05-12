@@ -1,6 +1,6 @@
 import { router, promptAction } from '@kit.ArkUI'
 import { AuthState } from '../services/UserSessions'
-import { ApiService, UserProfile, UserStats, UserCapsule, MoodDistribution, AiMoodReport } from '../services/ApiService'
+import { ApiService, UserProfile, UserStats, UserCapsule, MoodDistribution, AiMoodReport } from '../services/MockApiService'
 import { LoginTheme } from './models/ThemeConstants'
 import { MainTabBar, MainTabBarSlot } from './components/MainTabBar'
 
