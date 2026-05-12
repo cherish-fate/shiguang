@@ -1,0 +1,1417 @@
+﻿openapi: 3.0.3
+info:
+  title: sgyj_background New Features API
+  version: 1.2.0
+  description: |
+    拾光印记后端新增功能接口文档。
+    本文档用于单独导入 FoxApi / Apifox 做新增需求联调测试，不会并入 openapi.yaml。
+    坐标字段统一使用 `latitude` 和 `longitude`，类型为 `double`，采用 WGS84 十进制度。
+    例如北纬 `34°48'55"` 可写为 `34.815278`，东经 `114°18'08"` 可写为 `114.302222`。
+servers:
+  - url: http://127.0.0.1:3000
+    description: Local development
+tags:
+  - name: Capsule
+    description: 鑳跺泭鏂板鍔熻兘
+  - name: Map
+    description: 鍦板浘鏂板鍔熻兘
+  - name: Notification
+    description: 鍥炲閫氱煡
+  - name: Profile
+    description: 鎴戠殑椤甸潰鏂板鍔熻兘
+  - name: PC Connect
+    description: PC 绔繛鎺?security:
+  - bearerAuth: []
+paths:
+  /capsule/nearby:
+    get:
+      tags:
+        - Capsule
+      summary: 鎼滅储闄勮繎鐨勮兌鍥?      description: 鏍规嵁鐢ㄦ埛褰撳墠鍧愭爣鍜屾悳绱㈠崐寰勶紝杩斿洖闄勮繎宸插煁钘忚兌鍥婂垪琛紝骞剁粰鍑鸿窛绂诲拰绉佸瘑鏍囪銆?      parameters:
+        - name: latitude
+          in: query
+          required: true
+          description: 用户当前纬度，WGS84 十进制度，范围 -90 到 90
+          schema:
+            type: number
+            format: double
+            minimum: -90
+            maximum: 90
+          example: 34.815278
+        - name: longitude
+          in: query
+          required: true
+          description: 用户当前经度，WGS84 十进制度，范围 -180 到 180
+          schema:
+            type: number
+            format: double
+            minimum: -180
+            maximum: 180
+          example: 114.302222
+        - name: radiusMeters
+          in: query
+          required: true
+          description: 鎼滅储鍗婂緞锛屽崟浣嶇背锛岃寖鍥?1-5000
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5000
+          example: 200
+      responses:
+        "200":
+          description: 鏌ヨ鎴愬姛
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NearbyCapsulesResponse"
+              examples:
+                success:
+                  value:
+                    code: 200
+                    message: success
+                    data:
+                      center:
+                        latitude: 44
+                        longitude: 36
+                      radiusMeters: 200
+                      total: 1
+                      capsules:
+                        - capsuleId: 8
+                          campus: jm
+                          title: 鏂板鍔熻兘鑱旇皟鑳跺泭
+                          location: 娌冲崡澶у閲戞槑鏍″尯鍥句功棣?                          latitude: 44
+                          longitude: 36
+                          distanceMeters: 0
+                          isPrivate: false
+                          markerType: public
+                          mood: 鎬€蹇?                          publishedAt: "2026-05-09 09:53:44"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /capsule/popup:
+    get:
+      tags:
+        - Capsule
+      summary: 鑾峰彇鑳跺泭寮圭獥淇℃伅
+      description: 杩斿洖鑳跺泭寮圭獥灞曠ず鎵€闇€淇℃伅锛屽寘鎷槸鍚﹀凡鐐逛寒銆佹敹钘忔€绘暟銆佹垜鐨勬敹钘忔暟鍜屽洖澶嶆暟銆?      parameters:
+        - name: capsuleId
+          in: query
+          required: true
+          description: 鑳跺泭 ID
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+          example: 8
+      responses:
+        "200":
+          description: 鑾峰彇鎴愬姛
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CapsulePopupResponse"
+              examples:
+                success:
+                  value:
+                    code: 200
+                    message: success
+                    data:
+                      capsuleId: 8
+                      title: 鏂板鍔熻兘鑱旇皟鑳跺泭
+                      contentPreview: 鐢ㄤ簬闄勮繎鑳跺泭銆佸脊绐楀拰鍥炲閫氱煡鑱旇皟銆?                      location: 娌冲崡澶у閲戞槑鏍″尯鍥句功棣?                      latitude: 44
+                      longitude: 36
+                      mood: 鎬€蹇?                      isPrivate: false
+                      isLiked: true
+                      likeCount: 1
+                      myFavoriteCount: 2
+                      replyCount: 0
+                      ownerNickname: 鎷惧厜鐢ㄦ埛
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /map/emotion-stream:
+    get:
+      tags:
+        - Map
+      summary: 鑾峰彇瀹炴椂鎯呯华娴?      description: 鎸夊湴鐐硅仛鍚堣兌鍥婃暟閲忥紝骞舵彁鍙栬鍦扮偣鐨勪富瑕佸績澧冭瘝銆傛敮鎸佹寜鏇存柊鏃堕棿澧為噺鎷夊彇銆?      security: []
+      parameters:
+        - name: updatedAfter
+          in: query
+          required: false
+          description: 浠呰繑鍥炶鏃堕棿涔嬪悗鏇存柊杩囩殑鏁版嵁锛屾牸寮忓吋瀹?`2026-05-08T10:00:00Z`
+          schema:
+            type: string
+          example: "2026-05-08T10:00:00Z"
+      responses:
+        "200":
+          description: 鑾峰彇鎴愬姛
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmotionStreamResponse"
+              examples:
+                success:
+                  value:
+                    code: 200
+                    message: success
+                    data:
+                      totalLocations: 2
+                      items:
+                        - campus: jm
+                          location: 娌冲崡澶у閲戞槑鏍″尯鍥句功棣?                          latitude: 44
+                          longitude: 36
+                          capsuleCount: 18
+                          moodKeywords:
+                            - 鎬€蹇?                            - 娓╂殩
+                            - 闈掓槬
+                            - 鏈熷緟
+                          isNewLocation: false
+                          updatedAt: "2026-05-09 10:12:00"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /capsule/reply/notifications:
+    get:
+      tags:
+        - Notification
+      summary: 鑾峰彇鍥炲閫氱煡鍒楄〃
+      description: 鑳跺泭鍙戝竷鑰呮煡鐪嬫敹鍒扮殑鍥炲閫氱煡鍒楄〃銆?      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          example: 10
+      responses:
+        "200":
+          description: 鑾峰彇鎴愬姛
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReplyNotificationsResponse"
+              examples:
+                success:
+                  value:
+                    code: 200
+                    message: success
+                    data:
+                      items:
+                        - notificationId: 1
+                          capsuleId: 8
+                          capsuleTitle: 鏂板鍔熻兘鑱旇皟鑳跺泭
+                          replyId: 2
+                          replyContent: 杩欐潯鍥炲鐢ㄤ簬閫氱煡鑱旇皟銆?                          replierNickname: 鎷惧厜鐢ㄦ埛
+                          isRead: false
+                          createdAt: "2026-05-09 09:53:45"
+                      unreadCount: 1
+                      pagination:
+                        page: 1
+                        pageSize: 10
+                        total: 1
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /capsule/reply/notifications/read:
+    post:
+      tags:
+        - Notification
+      summary: 鏍囪鍥炲閫氱煡宸茶
+      description: 灏嗕竴鏉℃垨澶氭潯鍥炲閫氱煡鏍囪涓哄凡璇汇€?      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarkNotificationsReadRequest"
+            examples:
+              request:
+                value:
+                  notificationIds:
+                    - 1
+                    - 2
+      responses:
+        "200":
+          description: 鏍囪鎴愬姛
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarkNotificationsReadResponse"
+              examples:
+                success:
+                  value:
+                    code: 200
+                    message: success
+                    data:
+                      updatedCount: 2
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /profile/capsules/published:
+    get:
+      tags:
+        - Profile
+      summary: 鑾峰彇鎴戝彂甯冪殑鑳跺泭
+      description: |
+        鐢ㄤ簬鈥滄垜鐨勨€濋〉闈㈠睍绀烘垜鍙戝竷鐨勮兌鍥婂垪琛ㄣ€?        鐩告瘮鐜版湁 `/capsule/my`锛岃繖閲岃ˉ鍏呰繑鍥烇細
+        - 鏄惁绉佸瘑鏍囪
+        - 鍙戝竷鏃堕棿璺濆綋鍓嶇殑鐩稿鏂囨
+        - 鍐呭銆佸湴鐐广€佸績澧冭瘝銆佸潗鏍?      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          example: 10
+      responses:
+        "200":
+          description: 鑾峰彇鎴愬姛
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyPublishedCapsulesResponse"
+              examples:
+                success:
+                  value:
+                    code: 200
+                    message: success
+                    data:
+                      items:
+                        - capsuleId: 8
+                          title: 鏂板鍔熻兘鑱旇皟鑳跺泭
+                          content: 鐢ㄤ簬闄勮繎鑳跺泭銆佸脊绐楀拰鍥炲閫氱煡鑱旇皟銆?                          mood: 鎬€蹇?                          location: 娌冲崡澶у閲戞槑鏍″尯鍥句功棣?                          latitude: 44
+                          longitude: 36
+                          publishedAt: "2026-05-09 09:53:44"
+                          timeAgo: 3鍒嗛挓鍓?                          isPrivate: false
+                          visibilityLabel: 鍏紑
+                      statistics:
+                        totalCount: 12
+                        privateCount: 3
+                        publicCount: 9
+                      pagination:
+                        page: 1
+                        pageSize: 10
+                        total: 12
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /profile/capsules/favorites:
+    get:
+      tags:
+        - Profile
+      summary: 鑾峰彇鎴戞敹钘忕殑鑳跺泭
+      description: 杩斿洖褰撳墠鐢ㄦ埛鐐逛寒绾㈠績鏀惰棌鐨勮兌鍥婂垪琛ㄣ€?      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          example: 10
+      responses:
+        "200":
+          description: 鑾峰彇鎴愬姛
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyFavoriteCapsulesResponse"
+              examples:
+                success:
+                  value:
+                    code: 200
+                    message: success
+                    data:
+                      items:
+                        - capsuleId: 18
+                          title: 钀芥棩鍚庣殑鎿嶅満
+                          location: 娌冲崡澶у鏄庝鸡鏍″尯鎿嶅満
+                          latitude: 58
+                          longitude: 42
+                          mood: 骞抽潤
+                          isPrivate: false
+                          canView: true
+                          likedAt: "2026-05-09 08:21:00"
+                      pagination:
+                        page: 1
+                        pageSize: 10
+                        total: 1
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /profile/emotion/distribution:
+    get:
+      tags:
+        - Profile
+      summary: 鑾峰彇鎴戠殑鎯呯华鍒嗗竷
+      description: |
+        鍩轰簬鎴戝彂甯冪殑鑳跺泭蹇冨璇嶇粺璁″崰姣斻€?        杩斿洖鍓嶄簲涓儏缁爣绛惧拰鍓嶄笁涓珮棰戞儏缁瘝锛屾弧瓒斥€滄儏缁爣绛锯€濆拰鈥滄儏缁垎甯冣€濅袱涓渶姹傘€?      parameters:
+        - name: timeRangeDays
+          in: query
+          required: false
+          description: 缁熻鏃堕棿鑼冨洿锛屽崟浣嶅ぉ锛岄粯璁?30
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+            default: 30
+          example: 30
+      responses:
+        "200":
+          description: 鑾峰彇鎴愬姛
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyEmotionDistributionResponse"
+              examples:
+                success:
+                  value:
+                    code: 200
+                    message: success
+                    data:
+                      totalCapsules: 16
+                      topThreeTags:
+                        - 鎬€蹇?                        - 娓╂殩
+                        - 鏈熷緟
+                      topFiveTags:
+                        - 鎬€蹇?                        - 娓╂殩
+                        - 鏈熷緟
+                        - 骞抽潤
+                        - 鎴愰暱
+                      distribution:
+                        - mood: 鎬€蹇?                          count: 6
+                          percentage: 37.5
+                        - mood: 娓╂殩
+                          count: 4
+                          percentage: 25
+                        - mood: 鏈熷緟
+                          count: 3
+                          percentage: 18.75
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /profile/emotion/weekly-report:
+    get:
+      tags:
+        - Profile
+      summary: 鑾峰彇鎯呯华鍛ㄦ姤
+      description: 鐢?AI 瀵硅繎 7 澶╂儏缁彉鍖栬繘琛屾€荤粨锛屽苟缁欏嚭鎯呯华澶勭悊寤鸿銆?      parameters:
+        - name: weekOffset
+          in: query
+          required: false
+          description: 鍛ㄥ亸绉婚噺锛? 琛ㄧず鏈懆锛? 琛ㄧず涓婁竴鍛?          schema:
+            type: integer
+            minimum: 0
+            maximum: 12
+            default: 0
+          example: 0
+      responses:
+        "200":
+          description: 鑾峰彇鎴愬姛
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmotionWeeklyReportResponse"
+              examples:
+                success:
+                  value:
+                    code: 200
+                    message: success
+                    data:
+                      weekRange:
+                        startDate: "2026-05-04"
+                        endDate: "2026-05-10"
+                      summary: 杩欎竴鍛ㄤ綘鐨勬儏缁暣浣撶敱绱х环閫愭笎杞悜骞崇ǔ锛屾€€蹇靛拰鏈熷緟骞跺瓨銆?                      trend:
+                        risingMoods:
+                          - 鏈熷緟
+                          - 骞抽潤
+                        fallingMoods:
+                          - 鐒﹁檻
+                      suggestions:
+                        - 缁欒嚜宸卞畨鎺掍竴娆′綆鍘嬪姏鏁ｆ锛岃鎯呯华鑷劧娌夐檷銆?                        - 鎶婃渶甯稿嚭鐜扮殑鎬€蹇垫儏缁啓鎴愪竴鏉℃柊鐨勬椂鍏夎兌鍥娿€?        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /pc/connect/request:
+    get:
+      tags:
+        - PC Connect
+      summary: 鑾峰彇寰呯‘璁ょ殑 PC 杩炴帴璇锋眰
+      description: 鐐瑰嚮鈥淧C 绔繛鎺モ€濆悗锛屽墠绔彲鍏堣皟鐢ㄨ鎺ュ彛鍒ゆ柇鏄惁瀛樺湪寰呯‘璁よ繛鎺ワ紝骞跺睍绀哄脊绐楀唴瀹广€?      responses:
+        "200":
+          description: 鑾峰彇鎴愬姛
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PcConnectRequestResponse"
+              examples:
+                success:
+                  value:
+                    code: 200
+                    message: success
+                    data:
+                      hasPendingRequest: true
+                      requestId: pc_req_20260509103001
+                      deviceName: BYCC-LAPTOP
+                      deviceType: Windows PC
+                      loginAt: "2026-05-09 10:30:01"
+                      locationHint: 娌冲崡 寮€灏?        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /pc/connect/confirm:
+    post:
+      tags:
+        - PC Connect
+      summary: 纭鎴栨嫆缁?PC 杩炴帴
+      description: 鐢ㄦ埛鍦ㄥ脊绐椾腑閫夋嫨鍚屾剰鎴栨嫆缁濊繛鎺ユ椂璋冪敤銆?      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PcConnectConfirmRequest"
+            examples:
+              agree:
+                value:
+                  requestId: pc_req_20260509103001
+                  action: approve
+              reject:
+                value:
+                  requestId: pc_req_20260509103001
+                  action: reject
+      responses:
+        "200":
+          description: 鎿嶄綔鎴愬姛
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PcConnectConfirmResponse"
+              examples:
+                success:
+                  value:
+                    code: 200
+                    message: success
+                    data:
+                      requestId: pc_req_20260509103001
+                      action: approve
+                      connected: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /capsule/privacy/update:
+    post:
+      tags:
+        - Capsule
+      summary: 鏇存柊鑳跺泭闅愮璁剧疆
+      description: 鏇存柊鎸囧畾鑳跺泭鐨勫叕寮€/绉佸瘑鐘舵€併€傜瀵嗚兌鍥婂湪鍦板浘椤电偣鍑绘椂搴旀彁绀烘棤娉曟煡鐪嬨€?      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CapsulePrivacyUpdateRequest"
+            examples:
+              request:
+                value:
+                  capsuleId: 8
+                  isPublic: false
+      responses:
+        "200":
+          description: 鏇存柊鎴愬姛
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CapsulePrivacyUpdateResponse"
+              examples:
+                success:
+                  value:
+                    code: 200
+                    message: success
+                    data:
+                      capsuleId: 8
+                      isPublic: false
+                      isPrivate: true
+                      visibilityLabel: 绉佸瘑
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: 鍙傛暟閿欒
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+          examples:
+            error:
+              value:
+                code: 400
+                message: 鍙傛暟閿欒
+                data: null
+    Unauthorized:
+      description: 鏈櫥褰曟垨 Token 鏃犳晥
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+          examples:
+            error:
+              value:
+                code: 401
+                message: 鏈櫥褰曟垨 Token 缂哄け
+                data: null
+    NotFound:
+      description: 璧勬簮涓嶅瓨鍦?      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+          examples:
+            error:
+              value:
+                code: 404
+                message: 璧勬簮涓嶅瓨鍦?                data: null
+    ValidationFailed:
+      description: 鍙傛暟鏍￠獙澶辫触
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ValidationErrorResponse"
+          examples:
+            error:
+              value:
+                code: 422
+                message: 鍙傛暟鏍￠獙澶辫触
+                data:
+                  field: 鍙傛暟鏍煎紡涓嶆纭?    InternalError:
+      description: 鏈嶅姟鍣ㄥ唴閮ㄩ敊璇?      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BaseResponse"
+          examples:
+            error:
+              value:
+                code: 500
+                message: 鏁版嵁搴撴湭杩炴帴
+                data: null
+
+  schemas:
+    BaseResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: success
+        data:
+          nullable: true
+      required:
+        - code
+        - message
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 422
+        message:
+          type: string
+          example: 鍙傛暟鏍￠獙澶辫触
+        data:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - code
+        - message
+        - data
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        pageSize:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          example: 12
+      required:
+        - page
+        - pageSize
+        - total
+
+    NearbyCapsuleItem:
+      type: object
+      properties:
+        capsuleId:
+          type: integer
+          format: int64
+        campus:
+          type: string
+          example: jm
+        title:
+          type: string
+          example: 鏂板鍔熻兘鑱旇皟鑳跺泭
+        location:
+          type: string
+          example: 河南大学金明校区图书馆
+        latitude:
+          type: number
+          format: double
+          example: 34.815278
+        longitude:
+          type: number
+          format: double
+          example: 114.302222
+        distanceMeters:
+          type: number
+          format: double
+          example: 128.5
+        isPrivate:
+          type: boolean
+          example: false
+        markerType:
+          type: string
+          example: public
+        mood:
+          type: string
+          example: 鎬€蹇?        publishedAt:
+          type: string
+          example: "2026-05-09 09:53:44"
+      required:
+        - capsuleId
+        - campus
+        - title
+        - location
+        - latitude
+        - longitude
+        - distanceMeters
+        - isPrivate
+        - markerType
+        - mood
+        - publishedAt
+
+    NearbyCapsulesData:
+      type: object
+      properties:
+        center:
+          type: object
+          properties:
+            latitude:
+              type: number
+              format: double
+            longitude:
+              type: number
+              format: double
+          required:
+            - latitude
+            - longitude
+        radiusMeters:
+          type: integer
+        total:
+          type: integer
+        capsules:
+          type: array
+          items:
+            $ref: "#/components/schemas/NearbyCapsuleItem"
+      required:
+        - center
+        - radiusMeters
+        - total
+        - capsules
+
+    NearbyCapsulesResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/NearbyCapsulesData"
+      required:
+        - code
+        - message
+        - data
+
+    CapsulePopupData:
+      type: object
+      properties:
+        capsuleId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        contentPreview:
+          type: string
+        location:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        mood:
+          type: string
+        isPrivate:
+          type: boolean
+        isLiked:
+          type: boolean
+        likeCount:
+          type: integer
+        myFavoriteCount:
+          type: integer
+        replyCount:
+          type: integer
+        ownerNickname:
+          type: string
+      required:
+        - capsuleId
+        - title
+        - contentPreview
+        - location
+        - latitude
+        - longitude
+        - mood
+        - isPrivate
+        - isLiked
+        - likeCount
+        - myFavoriteCount
+        - replyCount
+        - ownerNickname
+
+    CapsulePopupResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/CapsulePopupData"
+      required:
+        - code
+        - message
+        - data
+
+    EmotionStreamItem:
+      type: object
+      properties:
+        campus:
+          type: string
+          example: jm
+        location:
+          type: string
+          example: 河南大学金明校区图书馆
+        latitude:
+          type: number
+          format: double
+          example: 34.815278
+        longitude:
+          type: number
+          format: double
+          example: 114.302222
+        capsuleCount:
+          type: integer
+          example: 18
+        moodKeywords:
+          type: array
+          items:
+            type: string
+          example:
+            - 鎬€蹇?            - 娓╂殩
+            - 闈掓槬
+            - 鏈熷緟
+        isNewLocation:
+          type: boolean
+          example: false
+        updatedAt:
+          type: string
+          example: "2026-05-09 10:12:00"
+      required:
+        - campus
+        - location
+        - latitude
+        - longitude
+        - capsuleCount
+        - moodKeywords
+        - isNewLocation
+        - updatedAt
+
+    EmotionStreamData:
+      type: object
+      properties:
+        totalLocations:
+          type: integer
+          example: 2
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmotionStreamItem"
+      required:
+        - totalLocations
+        - items
+
+    EmotionStreamResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/EmotionStreamData"
+      required:
+        - code
+        - message
+        - data
+
+    ReplyNotificationItem:
+      type: object
+      properties:
+        notificationId:
+          type: integer
+          format: int64
+        capsuleId:
+          type: integer
+          format: int64
+        capsuleTitle:
+          type: string
+        replyId:
+          type: integer
+          format: int64
+        replyContent:
+          type: string
+        replierNickname:
+          type: string
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          example: "2026-05-09 09:53:45"
+      required:
+        - notificationId
+        - capsuleId
+        - capsuleTitle
+        - replyId
+        - replyContent
+        - replierNickname
+        - isRead
+        - createdAt
+
+    ReplyNotificationsData:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReplyNotificationItem"
+        unreadCount:
+          type: integer
+          example: 1
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+        - items
+        - unreadCount
+        - pagination
+
+    ReplyNotificationsResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/ReplyNotificationsData"
+      required:
+        - code
+        - message
+        - data
+
+    MarkNotificationsReadRequest:
+      type: object
+      properties:
+        notificationIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          minItems: 1
+          example:
+            - 1
+            - 2
+      required:
+        - notificationIds
+
+    MarkNotificationsReadData:
+      type: object
+      properties:
+        updatedCount:
+          type: integer
+          example: 2
+      required:
+        - updatedCount
+
+    MarkNotificationsReadResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/MarkNotificationsReadData"
+      required:
+        - code
+        - message
+        - data
+
+    MyPublishedCapsuleItem:
+      type: object
+      properties:
+        capsuleId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        content:
+          type: string
+        mood:
+          type: string
+        location:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        publishedAt:
+          type: string
+        timeAgo:
+          type: string
+          example: 3鍒嗛挓鍓?        isPrivate:
+          type: boolean
+        visibilityLabel:
+          type: string
+          example: 鍏紑
+      required:
+        - capsuleId
+        - title
+        - content
+        - mood
+        - location
+        - latitude
+        - longitude
+        - publishedAt
+        - timeAgo
+        - isPrivate
+        - visibilityLabel
+
+    MyPublishedCapsulesData:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MyPublishedCapsuleItem"
+        statistics:
+          type: object
+          properties:
+            totalCount:
+              type: integer
+            privateCount:
+              type: integer
+            publicCount:
+              type: integer
+          required:
+            - totalCount
+            - privateCount
+            - publicCount
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+        - items
+        - statistics
+        - pagination
+
+    MyPublishedCapsulesResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/MyPublishedCapsulesData"
+      required:
+        - code
+        - message
+        - data
+
+    MyFavoriteCapsuleItem:
+      type: object
+      properties:
+        capsuleId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        location:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        mood:
+          type: string
+        isPrivate:
+          type: boolean
+        canView:
+          type: boolean
+        likedAt:
+          type: string
+      required:
+        - capsuleId
+        - title
+        - location
+        - latitude
+        - longitude
+        - mood
+        - isPrivate
+        - canView
+        - likedAt
+
+    MyFavoriteCapsulesData:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MyFavoriteCapsuleItem"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      required:
+        - items
+        - pagination
+
+    MyFavoriteCapsulesResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/MyFavoriteCapsulesData"
+      required:
+        - code
+        - message
+        - data
+
+    EmotionDistributionItem:
+      type: object
+      properties:
+        mood:
+          type: string
+        count:
+          type: integer
+        percentage:
+          type: number
+          format: double
+      required:
+        - mood
+        - count
+        - percentage
+
+    MyEmotionDistributionData:
+      type: object
+      properties:
+        totalCapsules:
+          type: integer
+        topThreeTags:
+          type: array
+          items:
+            type: string
+        topFiveTags:
+          type: array
+          items:
+            type: string
+        distribution:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmotionDistributionItem"
+      required:
+        - totalCapsules
+        - topThreeTags
+        - topFiveTags
+        - distribution
+
+    MyEmotionDistributionResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/MyEmotionDistributionData"
+      required:
+        - code
+        - message
+        - data
+
+    EmotionWeeklyReportData:
+      type: object
+      properties:
+        weekRange:
+          type: object
+          properties:
+            startDate:
+              type: string
+            endDate:
+              type: string
+          required:
+            - startDate
+            - endDate
+        summary:
+          type: string
+        trend:
+          type: object
+          properties:
+            risingMoods:
+              type: array
+              items:
+                type: string
+            fallingMoods:
+              type: array
+              items:
+                type: string
+          required:
+            - risingMoods
+            - fallingMoods
+        suggestions:
+          type: array
+          items:
+            type: string
+      required:
+        - weekRange
+        - summary
+        - trend
+        - suggestions
+
+    EmotionWeeklyReportResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/EmotionWeeklyReportData"
+      required:
+        - code
+        - message
+        - data
+
+    PcConnectRequestData:
+      type: object
+      properties:
+        hasPendingRequest:
+          type: boolean
+        requestId:
+          type: string
+        deviceName:
+          type: string
+        deviceType:
+          type: string
+        loginAt:
+          type: string
+        locationHint:
+          type: string
+      required:
+        - hasPendingRequest
+
+    PcConnectRequestResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/PcConnectRequestData"
+      required:
+        - code
+        - message
+        - data
+
+    PcConnectConfirmRequest:
+      type: object
+      properties:
+        requestId:
+          type: string
+          example: pc_req_20260509103001
+        action:
+          type: string
+          enum:
+            - approve
+            - reject
+      required:
+        - requestId
+        - action
+
+    PcConnectConfirmData:
+      type: object
+      properties:
+        requestId:
+          type: string
+        action:
+          type: string
+        connected:
+          type: boolean
+      required:
+        - requestId
+        - action
+        - connected
+
+    PcConnectConfirmResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/PcConnectConfirmData"
+      required:
+        - code
+        - message
+        - data
+
+    CapsulePrivacyUpdateRequest:
+      type: object
+      properties:
+        capsuleId:
+          type: integer
+          format: int64
+        isPublic:
+          type: boolean
+      required:
+        - capsuleId
+        - isPublic
+
+    CapsulePrivacyUpdateData:
+      type: object
+      properties:
+        capsuleId:
+          type: integer
+          format: int64
+        isPublic:
+          type: boolean
+        isPrivate:
+          type: boolean
+        visibilityLabel:
+          type: string
+      required:
+        - capsuleId
+        - isPublic
+        - isPrivate
+        - visibilityLabel
+
+    CapsulePrivacyUpdateResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          $ref: "#/components/schemas/CapsulePrivacyUpdateData"
+      required:
+        - code
+        - message
+        - data
+
+
+
+

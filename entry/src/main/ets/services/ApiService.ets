@@ -217,7 +217,7 @@ export interface RequestOptions {
 }
 
 export class ApiService {
-  private static baseUrl: string = 'http://127.0.0.1:8000'
+  private static baseUrl: string = 'http://10.16.149.127:3000'
   private static timeoutMs: number = 10000
   private static authToken: string = ''
 
