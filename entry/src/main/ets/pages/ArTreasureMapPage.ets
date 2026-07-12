@@ -2,6 +2,7 @@ import { router, promptAction } from '@kit.ArkUI'
 //import { geolocation } from '@kit.LocationKit'
 import { geoLocationManager } from '@kit.LocationKit';
 import { CapsuleMapMarker } from './components/CapsuleMapMarker'
+import { CircleWave } from './components/CircleWave'
 import { ApiService, CapsuleListResponse, EmotionStreamResponse, EmotionStreamItem, CommentResponse } from '../services/MockApiService'
 import {
   CampusId,
@@ -59,22 +60,7 @@ struct ArTreasureMapPage {
     this.loadEmotionStream()
   }
 
-  // private async getCurrentLocation(): Promise<void> {
-  //   try {
-  //     const location = await geolocation.getCurrentLocation({
-  //       timeoutMs: 10000,
-  //       enableHighAccuracy: true
-  //     })
-  //     const loc = location as geolocation.Location
-  //     this.currentLatitude = loc.latitude
-  //     this.currentLongitude = loc.longitude
-  //     this.loadNearbyCapsules()
-  //   } catch (error) {
-  //     console.error('Failed to get location:', error)
-  //     promptAction.showToast({ message: '定位失败，使用默认数据' })
-  //     this.loadCapsules()
-  //   }
-  // }
+
   private async getCurrentLocation(): Promise<void> {
     try {
       // 1. 检查定位是否开启（防止直接抛异常）
@@ -244,13 +230,15 @@ struct ArTreasureMapPage {
     }
     const markers: MapCapsuleMarker[] = []
     const defaultLocations: DefaultLocation[] = [
-      { name: '图书馆', x: 42, y: 48, distance: 25 },
-      { name: '明德湖', x: 55, y: 42, distance: 50 },
-      { name: '操场', x: 72, y: 68, distance: 80 },
-      { name: '计算机学院', x: 38, y: 62, distance: 15 }
+      { name: '图书馆', x: 25, y: 30, distance: 25 },
+      { name: '明德湖', x: 50, y: 25, distance: 40 },
+      { name: '操场', x: 75, y: 35, distance: 60 },
+      { name: '计算机学院', x: 30, y: 60, distance: 35 },
+      { name: '食堂', x: 60, y: 55, distance: 55 },
+      { name: '教学楼', x: 70, y: 70, distance: 75 }
     ]
     defaultLocations.forEach((loc: DefaultLocation, index: number) => {
-      const kinds: MoodKind[] = ['anxiety', 'romance', 'vitality', 'geek']
+      const kinds: MoodKind[] = ['anxiety', 'romance', 'vitality', 'geek', 'vitality', 'romance']
       const kind: MoodKind = kinds[index % kinds.length]
       markers.push({
         id: `default_${index}`,
@@ -484,7 +472,7 @@ struct ArTreasureMapPage {
           .fontColor('#64748B')
         Text(item.moodKeywords[0] || '未知')
           .fontSize(12)
-          .fontColor('#5B21B6')
+          .fontColor('#ff4389f8')
           .fontWeight(FontWeight.Medium)
       }
       .width('100%')
@@ -599,7 +587,7 @@ struct ArTreasureMapPage {
       Button() {
         Row({ space: 8 }) {
           Image(c.isLitByMe ? $r('app.media.signup_collect'): $r('app.media.map_like'))
-           .width(20)
+            .width(20)
           Text(c.isLitByMe ? `已点亮 (${c.lightCount})` : `点亮胶囊 (${c.lightCount})`)
             .fontSize(16)
             .fontColor(Color.White)
@@ -876,24 +864,39 @@ struct ArTreasureMapPage {
           }
           .width('100%')
 
-          List({ space: 10 }) {
+          List({ space: 12 }) {
             ForEach(this.nearbyList(), (nc: MapCapsuleMarker) => {
               ListItem() {
-                Row({ space: 8 }) {
-                  Image($r('app.media.map_capsule'))
-                    .width(25)
-                  Text(`${nc.locationName} · ${nc.distanceMeters}m`)
-                    .fontSize(13)
-                    .fontColor('#334155')
+                Row({ space: 10 }) {
+                  Stack({ alignContent: Alignment.Center }) {
+                    CircleWave({ color: haloColorForMood(nc.moodKind) })
+                    Image(nc.moodEmoji)
+                      .width(24)
+                      .height(24)
+                      .padding(4)
+                      .borderRadius(12)
+                      .backgroundColor('#FFFFFF')
+                  }
+                  .width(40)
+                  .height(40)
+                  Column({ space: 2 }) {
+                    Text(nc.locationName)
+                      .fontSize(14)
+                      .fontColor('#1E293B')
+                      .fontWeight(FontWeight.Medium)
+                    Text(`${nc.distanceMeters}m`)
+                      .fontSize(11)
+                      .fontColor('#64748B')
+                  }
                 }
-                .padding({ left: 10, right: 10, top: 10, bottom: 10 })
+                .padding({ left: 12, right: 12, top: 10, bottom: 10 })
                 .backgroundColor('#FFFFFF')
-                .borderRadius(20)
+                .borderRadius(24)
                 .shadow({
-                  radius: 6,
-                  color: '#10000000',
+                  radius: 8,
+                  color: '#15000000',
                   offsetX: 0,
-                  offsetY: 1
+                  offsetY: 2
                 })
                 .onClick((): void => {
                   this.openCapsule(nc.id)
@@ -903,7 +906,7 @@ struct ArTreasureMapPage {
           }
           .listDirection(Axis.Horizontal)
           .width('100%')
-          .height(52)
+          .height(72)
           .scrollBar(BarState.Off)
         }
         .width('100%')

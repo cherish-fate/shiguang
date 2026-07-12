@@ -91,8 +91,8 @@ export class ApiService {
       location: '金明校区图书馆',
       createdAt: ApiService.nowIso(),
       latitude: 34.815278,
-      longitude: 114.302222,
-      distanceMeters: 128,
+      longitude: 144.302222,
+      distanceMeters: 58,
       isPrivate: false,
       likes: 12,
       views: 64
@@ -104,24 +104,11 @@ export class ApiService {
       location: '金明校区操场',
       createdAt: ApiService.nowIso(),
       latitude: 34.814510,
-      longitude: 114.300930,
-      distanceMeters: 240,
+      longitude: 134.300930,
+      distanceMeters: 40,
       isPrivate: false,
       likes: 9,
       views: 53
-    },
-    {
-      id: '3',
-      moodTag: '# 活力黄',
-      content: '今天把待办清了一半，给自己点个赞。',
-      location: '明伦校区主楼',
-      createdAt: ApiService.nowIso(),
-      latitude: 34.797120,
-      longitude: 114.356780,
-      distanceMeters: 420,
-      isPrivate: false,
-      likes: 6,
-      views: 31
     },
     {
       id: '4',
