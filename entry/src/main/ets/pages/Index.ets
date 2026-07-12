@@ -11,7 +11,6 @@ struct Index {
     })
   }
 
-
   build() {
     Stack({ alignContent: Alignment.Bottom }) {
       Column() {
