@@ -6,6 +6,7 @@
     "pages/PublishCapsulePage",
     "pages/MinePage",
     "pages/ArTreasureMapPage",
-    "pages/AccountSettingsPage"
+    "pages/AccountSettingsPage",
+    "pages/DriftagePage"
   ]
 }

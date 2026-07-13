@@ -151,7 +151,7 @@ struct MinePage {
   }
 
   private goHome(): void {
-    router.pushUrl({url:'pages/Index'})
+    router.back()
   }
 
   private openPublish(): void {

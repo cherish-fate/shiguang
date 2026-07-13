@@ -20,7 +20,7 @@ const MOOD_THEMES: Record<string, MoodTheme> = {
     accent: '#2563EB',
     selectedTagBg: '#ffeff5ff',
     tagBorder: '#ffeff5ff',
-    unselectedText: '#334155'
+    unselectedText: '#6B7280'
   },
   '# 浪漫粉': {
     pageBg: '#fffcecf4',
