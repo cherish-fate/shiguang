@@ -1,0 +1,6 @@
+[submodule ".codegenie"]
+    path = .codegenie
+    url = https://github.com/cherish-fate/shiguang.git
+[submodule "shiguang"]
+	path = shiguang
+	url = https://github.com/cherish-fate/shiguang.git
