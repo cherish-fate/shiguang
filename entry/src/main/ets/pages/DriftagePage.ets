@@ -1,6 +1,6 @@
 import { router } from '@kit.ArkUI'
 import { promptAction } from '@kit.ArkUI'
-import { ApiService } from '../services/MockApiService'
+import { ApiService, CapsuleData } from '../services/ApiService'
 
 interface FloatingCapsule {
   id: string
@@ -477,26 +477,29 @@ struct DriftagePage {
   }
 
   private async openCapsuleDetail(capsuleId: string): Promise<void> {
-    const capsules = await ApiService.getCapsules('')
-    const capsule = capsules.find(c => c.id === capsuleId)
-    if (capsule) {
-      const comments = await ApiService.getComments(capsuleId)
-      const commentItems: CommentItem[] = comments.map(c => this.createCommentItem(c.id, c.text, c.createdAt))
-      const moodStyle: MoodStyle = this.getMoodStyle(capsule.moodTag)
+    const id = parseInt(capsuleId)
+    if (isNaN(id)) return
+    try {
+      const capsule = await ApiService.getCapsuleDetail(id)
+      const replies = await ApiService.getReplies(id)
+      const commentItems: CommentItem[] = replies.list.map(c => this.createCommentItem(String(c.id), c.content, c.createdAt))
+      const moodStyle: MoodStyle = this.getMoodStyle(capsule.mood)
       this.capsuleDetail = {
-        id: capsule.id,
-        moodTag: capsule.moodTag,
-        content: capsule.content,
+        id: String(capsule.id),
+        moodTag: capsule.mood,
+        content: capsule.summary,
         location: capsule.location,
-        createdAt: capsule.createdAt,
-        likes: capsule.likes,
-        isLiked: this.likedSet.has(capsule.id),
-        isFavorited: this.favoritedSet.has(capsule.id),
+        createdAt: new Date(capsule.timestamp).toISOString(),
+        likes: 0,
+        isLiked: this.likedSet.has(String(capsule.id)),
+        isFavorited: this.favoritedSet.has(String(capsule.id)),
         color: moodStyle.color,
         icon: moodStyle.icon,
         comments: commentItems
       }
       this.dialogController.open()
+    } catch (error) {
+      console.error('Failed to load capsule detail:', error)
     }
   }
 
@@ -517,7 +520,9 @@ struct DriftagePage {
   }
 
   private async handleAddComment(capsuleId: string, text: string): Promise<void> {
-    await ApiService.addComment(capsuleId, text)
+    const id = parseInt(capsuleId)
+    if (isNaN(id)) return
+    await ApiService.addReply(id, text)
   }
 
   private dialogController: CustomDialogController = new CustomDialogController({
