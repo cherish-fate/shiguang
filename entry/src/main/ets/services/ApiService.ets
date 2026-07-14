@@ -2,120 +2,118 @@ import { promptAction } from '@kit.ArkUI'
 import { http } from '@kit.NetworkKit'
 import fs from '@ohos.file.fs'
 
-export type CapsuleType = 'text' | 'audio' | 'code'
+// ============================================================
+// 类型定义 —— 严格按照后端接口定义
+// ============================================================
 
-export interface CapsuleBrief {
-  id: string
-  name: string
-  emoji: string
-  distanceMeters: number
+// --- 通用 ---
+export interface ApiEnvelope<T> {
+  code?: number
+  message?: string
+  data?: T
 }
 
-export interface PublishCapsuleRequest {
-  type: CapsuleType
-  moodTag: string
-  content: string
-  attachments: string[]
-  location: string,
-  isPrivate:boolean
-}
-
-export interface PublishCapsuleResponse {
-  id: string
-  createdAt: string
-}
-
+// --- SMS ---
 export interface SendCodeRequest {
   phone: string
+  type: 'register' | 'login'
 }
 
 export interface SendCodeResponse {
   success: boolean
 }
 
+// --- 用户注册/登录 ---
 export interface RegisterRequest {
+  avatar?: string
   nickname: string
+  grade: string
+  college: string
   phone: string
   code: string
   password: string
-  grade: string
-  college: string
-  avatar?: string
+  agreeProtocol: boolean
 }
 
-export interface UserProfile {
-  nickname: string
-  grade: string
-  college: string
-  avatar: string
+export interface UserInfoBrief {
+  userId: number
   phone: string
-}
-
-export interface UpdateProfileRequest {
-  nickname?: string
-  grade?: string
-  college?: string
-  avatar?: string
-}
-
-export interface UpdatePasswordRequest {
-  oldPassword: string
-  newPassword: string
-}
-
-export interface UserStats {
-  capsuleCount: number
-  favoriteCount: number
-  locationCount: number
-}
-
-export interface UserCapsule {
-  id: string
-  moodTag: string
-  content: string
-  location: string
-  createdAt: string
-  isPrivate: boolean
-  likes: number
-  views: number
-}
-
-export interface MoodDistribution {
-  label: string
-  count: number
-  percent: number
-}
-
-export interface AiMoodReport {
-  summary: string
-  suggestions: string[]
+  nickname: string
+  avatar: string
 }
 
 export interface RegisterResponse {
   token: string
-  userId: string
-  nickname: string
+  tokenType: string
+  expiresIn: number
+  userInfo: UserInfoBrief
 }
 
 export interface LoginRequest {
   phone: string
   code: string
+  agreeProtocol: boolean
 }
 
 export interface LoginResponse {
   token: string
-  userId: string
-  nickname: string
+  tokenType: string
+  expiresIn: number
+  userInfo: UserInfoBrief
 }
 
-export interface AgreementRequest {
-  type: 'agreement' | 'privacy'
+export interface HarmonyLoginRequest {
+  authorizationCode: string
+}
+
+export interface HarmonyUserInfo {
+  userId: number
+  nickname: string
+  avatar: string
+  phone: string
+  openId: string
+}
+
+export interface HarmonyLoginResponse {
+  token: string
+  tokenType: string
+  expiresIn: number
+  userInfo: HarmonyUserInfo
+}
+
+// --- 用户信息 ---
+export interface UserProfile {
+  userId: number
+  phone: string
+  nickname: string
+  avatar: string
+}
+
+export interface UpdateProfileRequest {
+  nickname?: string
+  avatar?: string
+  phone?: string
+}
+
+export interface ChangePasswordRequest {
+  oldPassword: string
+  newPassword: string
+}
+
+// --- 协议 ---
+export interface AgreementContentItem {
+  title: string
+  version: string
+  content: string
+  updateTime: string
 }
 
 export interface AgreementResponse {
-  content: string
+  agreement?: AgreementContentItem
+  privacy?: AgreementContentItem
 }
 
+// --- 文件上传 ---
 export interface FileUploadResponse {
   url: string
   filename: string
@@ -123,39 +121,215 @@ export interface FileUploadResponse {
   mimeType: string
 }
 
-export interface AiPolishRequest {
-  content: string
-}
-
-export interface AiPolishResponse {
-  content: string
-}
-
-export interface AiAsrRequest {
-  audioBase64: string
-}
-
-export interface AiAsrResponse {
-  text: string
-}
-
-export interface CapsuleListResponse {
-  id: string
-  moodTag: string
-  content: string
+// --- 胶囊 ---
+export interface CreateCapsuleRequest {
+  campus: string
+  title: string
+  summary: string
   location: string
-  createdAt: string
+  latitude: number
+  longitude: number
+  mood?: string
+  color?: string
+  images?: string[]
+  isPublic?: boolean
+}
+
+export interface CapsuleData {
+  id: number
+  campus: string
+  title: string
+  summary: string
+  location: string
+  mood: string
+  color: string
+  latitude: number
+  longitude: number
+  timestamp: number
+}
+
+export interface Pagination {
+  page: number
+  pageSize: number
+  total: number
+}
+
+export interface CapsuleListData {
+  list: CapsuleData[]
+  pagination: Pagination
+}
+
+export type CreateCapsuleResponse = CapsuleData
+
+export interface ListCapsulesQuery {
+  page?: number
+  pageSize?: number
+  campus?: string
+  mood?: string
+  timeRange?: number
+  keyword?: string
+}
+
+export interface LikeRequest {
+  capsuleId: number
+}
+
+export interface LikeResponse {
+  likeCount: number
+  isLiked: boolean
+}
+
+export interface DeleteRequest {
+  capsuleId: number
+}
+
+export interface BatchRequest {
+  capsuleIds: number[]
+  action: string
+}
+
+export interface ExportRequest {
+  capsuleIds: number[]
+}
+
+export interface ExportResponse {
+  url: string
+}
+
+export interface NearbyCapsuleItem {
+  capsuleId: number
+  campus: string
+  title: string
+  location: string
   latitude: number
   longitude: number
   distanceMeters: number
   isPrivate: boolean
-  likes: number
-  views: number
+  markerType: string
+  mood: string
+  publishedAt: string
 }
 
-export interface EmotionStreamResponse {
-  totalLocations: number
-  items: EmotionStreamItem[]
+export interface GeoPoint {
+  latitude: number
+  longitude: number
+}
+
+export interface NearbyCapsulesResponse {
+  center: GeoPoint
+  radiusMeters: number
+  total: number
+  capsules: NearbyCapsuleItem[]
+}
+
+export interface NearbyCapsulesQuery {
+  latitude: number
+  longitude: number
+  radiusMeters: number
+}
+
+export interface CapsulePopupData {
+  capsuleId: number
+  title: string
+  contentPreview: string
+  location: string
+  latitude: number
+  longitude: number
+  mood: string
+  isPrivate: boolean
+  isLiked: boolean
+  likeCount: number
+  myFavoriteCount: number
+  replyCount: number
+  ownerNickname: string
+}
+
+export interface BindLocationRequest {
+  capsuleId: number
+  location: string
+  latitude: number
+  longitude: number
+}
+
+export interface BindLocationResponse {
+  capsuleId: number
+  location: string
+  latitude: number
+  longitude: number
+}
+
+export interface UpdatePrivacyRequest {
+  capsuleId: number
+  isPublic: boolean
+}
+
+export interface UpdatePrivacyResponse {
+  capsuleId: number
+  isPublic: boolean
+  isPrivate: boolean
+  visibilityLabel: string
+}
+
+// --- 回复 ---
+export interface ReplyRequest {
+  capsuleId: number
+  content: string
+}
+
+export interface ReplyItem {
+  id: number
+  capsuleId: number
+  content: string
+  createdAt: string
+}
+
+export interface RepliesResponse {
+  list: ReplyItem[]
+  pagination: Pagination
+}
+
+export interface ReplyNotificationItem {
+  notificationId: number
+  capsuleId: number
+  capsuleTitle: string
+  replyId: number
+  replyContent: string
+  replierNickname: string
+  isRead: boolean
+  createdAt: string
+}
+
+export interface ReplyNotificationsResponse {
+  items: ReplyNotificationItem[]
+  unreadCount: number
+  pagination: Pagination
+}
+
+export interface MarkNotificationsReadRequest {
+  notificationIds: number[]
+}
+
+export interface MarkNotificationsReadResponse {
+  updatedCount: number
+}
+
+// --- 地图 ---
+export interface MapCapsuleItem {
+  id: number
+  latitude: number
+  longitude: number
+  mood: string
+  color: string
+}
+
+export interface MapCapsulesResponse {
+  capsules: MapCapsuleItem[]
+}
+
+export interface MapStatsResponse {
+  totalCount: number
+  moodScore: number
+  distribution: Record<string, number>
 }
 
 export interface EmotionStreamItem {
@@ -169,42 +343,197 @@ export interface EmotionStreamItem {
   updatedAt: string
 }
 
-export interface NearbyCapsuleRequest {
+export interface EmotionStreamResponse {
+  totalLocations: number
+  items: EmotionStreamItem[]
+}
+
+// --- 个人主页 ---
+export interface PageQuery {
+  page?: number
+  pageSize?: number
+}
+
+export interface PublishedCapsuleItem {
+  capsuleId: number
+  title: string
+  content: string
+  mood: string
+  location: string
   latitude: number
   longitude: number
-  radius: number
+  publishedAt: string
+  timeAgo: string
+  isPrivate: boolean
+  visibilityLabel: string
 }
 
-export interface CommentResponse {
-  id: string
-  text: string
+export interface CapsuleStatistics {
+  totalCount: number
+  privateCount: number
+  publicCount: number
+}
+
+export interface PublishedCapsulesResponse {
+  items: PublishedCapsuleItem[]
+  statistics: CapsuleStatistics
+  pagination: Pagination
+}
+
+export interface FavoriteCapsuleItem {
+  capsuleId: number
+  title: string
+  location: string
+  latitude: number
+  longitude: number
+  mood: string
+  isPrivate: boolean
+  canView: boolean
+  likedAt: string
+}
+
+export interface FavoriteCapsulesResponse {
+  items: FavoriteCapsuleItem[]
+  pagination: Pagination
+}
+
+export interface EmotionDistributionItem {
+  mood: string
+  count: number
+  percentage: number
+}
+
+export interface EmotionDistributionResponse {
+  totalCapsules: number
+  topThreeTags: string[]
+  topFiveTags: string[]
+  distribution: EmotionDistributionItem[]
+}
+
+export interface WeekRange {
+  startDate: string
+  endDate: string
+}
+
+export interface MoodTrend {
+  risingMoods: string[]
+  fallingMoods: string[]
+}
+
+export interface WeeklyReportResponse {
+  weekRange: WeekRange
+  summary: string
+  trend: MoodTrend
+  suggestions: string[]
+}
+
+// --- PC 连接 ---
+export interface PcConnectRequestData {
+  hasPendingRequest: boolean
+  requestId?: string
+  deviceName?: string
+  deviceType?: string
+  loginAt?: string
+  locationHint?: string
+}
+
+export interface PcConnectConfirmRequest {
+  requestId: string
+  action: string
+}
+
+export interface PcConnectConfirmResponse {
+  requestId: string
+  action: string
+  connected: boolean
+}
+
+export interface PcPairStartRequest {
+  sourceDeviceType: string
+  sourceDeviceName: string
+  targetDeviceType: string
+  targetDeviceName?: string
+  locationHint?: string
+}
+
+export interface PcPairStartResponse {
+  pairCode: string
+  status: string
+  requiresConfirmation: boolean
+  trustedPreviously: boolean
+  sourceDeviceType: string
+  sourceDeviceName: string
+  targetDeviceType: string
+  targetDeviceName: string
+  locationHint: string
+  confirmTip: string
+}
+
+export interface PcPairDeviceInfo {
+  deviceType: string
+  deviceName: string
+}
+
+export interface PcPairStatusResponse {
+  pairCode: string
+  pairKey: string
+  status: string
+  requiresConfirmation: boolean
+  trustedPreviously: boolean
+  initiator: PcPairDeviceInfo
+  target: PcPairDeviceInfo
+  locationHint: string
   createdAt: string
+  handledAt: string | null
 }
 
-export interface AddCommentRequest {
-  capsuleId: string
+export interface PcPairConfirmRequest {
+  pairCode: string
+  action: string
+}
+
+export interface PcPairConfirmResponse {
+  pairCode: string
+  action: string
+  status: string
+  requiresConfirmation: boolean
+  trustedPreviously: boolean
+  handledAt: string
+}
+
+// --- AI ---
+export interface AiNarrativeResponse {
   text: string
+  capsuleCount: number
 }
 
-export interface AddCommentBody {
-  text: string
+export interface AiEmotionItem {
+  label: string
+  count: number
+  color: string
 }
 
-export interface AddCommentResponse {
-  success: boolean
-  commentId: string
+export interface AiRewriteResponse {
+  originalText: string
+  polishedText: string
+  style: string
 }
 
-export interface FavoriteResponse {
-  success: boolean
-  favorited: boolean
+export interface AiVoiceOptimizeResponse {
+  originalText: string
+  optimizedText: string
 }
 
-interface ApiEnvelope<T> {
-  code?: number
-  message?: string
-  data?: T
+export interface AiCodeFormatResponse {
+  originalCode: string
+  formattedCode: string
+  highlightHtml: string
+  language: string
 }
+
+// ============================================================
+// ApiService
+// ============================================================
 
 export interface ApiConfig {
   baseUrl?: string
@@ -217,7 +546,7 @@ export interface RequestOptions {
 }
 
 export class ApiService {
-  private static baseUrl: string = 'http://10.16.149.127:3000'
+  private static baseUrl: string = 'http://192.168.0.234:3000'
   private static timeoutMs: number = 10000
   private static authToken: string = ''
 
@@ -304,7 +633,7 @@ export class ApiService {
 
   private static showErrorToast(message: string): void {
     try {
-      promptAction.showToast({ message })
+      promptAction.showToast({ message: message })
     } catch (error) {
       console.error('Failed to show toast:', error)
     }
@@ -323,11 +652,11 @@ export class ApiService {
       const extraData: string | undefined = body ? JSON.stringify(body) : undefined
 
       const response = await client.request(ApiService.buildUrl(path, query), {
-        method,
+        method: method,
         header: ApiService.buildHeaders(headers),
         connectTimeout: ApiService.timeoutMs,
         readTimeout: ApiService.timeoutMs,
-        extraData,
+        extraData: extraData,
         expectDataType: http.HttpDataType.STRING
       })
 
@@ -350,17 +679,37 @@ export class ApiService {
     }
   }
 
-  static async queryNearbyCapsules(): Promise<CapsuleBrief[]> {
-    return await ApiService.request<CapsuleBrief[]>('/capsules/nearby', http.RequestMethod.GET)
+  // ============================================================
+  // 辅助方法：构建查询参数
+  // ============================================================
+
+  private static makeQueryObj(entries: [string, string | number | boolean][]): Record<string, string | number | boolean> {
+    const result: Record<string, string | number | boolean> = {}
+    for (let i = 0; i < entries.length; i++) {
+      const pair = entries[i]
+      result[pair[0]] = pair[1]
+    }
+    return result
   }
 
-  static async publishCapsule(payload: PublishCapsuleRequest): Promise<PublishCapsuleResponse> {
-    return await ApiService.request<PublishCapsuleResponse>('/capsules', http.RequestMethod.POST, payload)
+  private static makeOptionsFromQuery(q: Record<string, string | number | boolean>): RequestOptions {
+    const opts: RequestOptions = { query: q }
+    return opts
   }
+
+  // ============================================================
+  // SMS
+  // ============================================================
 
   static async sendCode(payload: SendCodeRequest): Promise<SendCodeResponse> {
-    return await ApiService.request<SendCodeResponse>('/user/send-code', http.RequestMethod.POST, payload)
+    await ApiService.request<SendCodeResponse>('/sms/sendCode', http.RequestMethod.POST, payload)
+    const result: SendCodeResponse = { success: true }
+    return result
   }
+
+  // ============================================================
+  // 用户
+  // ============================================================
 
   static async register(payload: RegisterRequest): Promise<RegisterResponse> {
     return await ApiService.request<RegisterResponse>('/user/register', http.RequestMethod.POST, payload)
@@ -370,9 +719,46 @@ export class ApiService {
     return await ApiService.request<LoginResponse>('/user/login', http.RequestMethod.POST, payload)
   }
 
-  static async getAgreement(type: 'agreement' | 'privacy'): Promise<AgreementResponse> {
-    return await ApiService.request<AgreementResponse>(`/agreement/content?type=${type}`, http.RequestMethod.GET)
+  static async harmonyLogin(payload: HarmonyLoginRequest): Promise<HarmonyLoginResponse> {
+    return await ApiService.request<HarmonyLoginResponse>('/user/login/harmony', http.RequestMethod.POST, payload)
   }
+
+  static async logout(): Promise<void> {
+    await ApiService.request<void>('/user/logout', http.RequestMethod.POST)
+  }
+
+  static async getUserProfile(): Promise<UserProfile> {
+    return await ApiService.request<UserProfile>('/user/info', http.RequestMethod.POST)
+  }
+
+  static async updateUserProfile(payload: UpdateProfileRequest): Promise<UserProfile> {
+    return await ApiService.request<UserProfile>('/user/update', http.RequestMethod.POST, payload)
+  }
+
+  static async changePassword(payload: ChangePasswordRequest): Promise<void> {
+    await ApiService.request<void>('/user/password', http.RequestMethod.POST, payload)
+  }
+
+  // ============================================================
+  // 协议
+  // ============================================================
+
+  static async getAgreement(type: 'agreement' | 'privacy'): Promise<AgreementContentItem> {
+    const query: Record<string, string | number | boolean> = ApiService.makeQueryObj([['type', type]])
+    const opts: RequestOptions = ApiService.makeOptionsFromQuery(query)
+    const response = await ApiService.request<AgreementResponse>('/agreement/content', http.RequestMethod.GET, undefined, opts)
+    if (type === 'agreement' && response.agreement) {
+      return response.agreement
+    }
+    if (type === 'privacy' && response.privacy) {
+      return response.privacy
+    }
+    throw new Error('协议内容获取失败')
+  }
+
+  // ============================================================
+  // 文件上传
+  // ============================================================
 
   static async uploadFile(filePath: string): Promise<FileUploadResponse> {
     const client = http.createHttp()
@@ -382,29 +768,31 @@ export class ApiService {
       const buffer: Uint8Array = new Uint8Array(fileStat.size)
       fs.readSync(file.fd, buffer)
       fs.closeSync(file.fd)
-      
+
       const fileContent: ArrayBuffer = buffer.buffer as ArrayBuffer
       const boundary: string = '----WebKitFormBoundary' + Date.now().toString(36)
       const filename: string = filePath.substring(filePath.lastIndexOf('/') + 1)
-      
+
       const base64Content: string = ApiService.arrayBufferToBase64(fileContent)
-      
+
       const bodyParts: string[] = []
-      bodyParts.push(`--${boundary}`)
-      bodyParts.push(`Content-Disposition: form-data; name="file"; filename="${filename}"`)
+      const part1: string = `--${boundary}`
+      bodyParts.push(part1)
+      const part2: string = `Content-Disposition: form-data; name="file"; filename="${filename}"`
+      bodyParts.push(part2)
       bodyParts.push('Content-Type: application/octet-stream')
       bodyParts.push('')
       bodyParts.push(base64Content)
-      bodyParts.push(`--${boundary}--`)
+      const partEnd: string = `--${boundary}--`
+      bodyParts.push(partEnd)
       bodyParts.push('')
-      
+
       const body: string = bodyParts.join('\r\n')
-      
+
+      const uploadHeaders: Record<string, string> = { 'Content-Type': `multipart/form-data; boundary=${boundary}` }
       const response: http.HttpResponse = await client.request(ApiService.buildUrl('/file/upload'), {
         method: http.RequestMethod.POST,
-        header: ApiService.buildHeaders({
-          'Content-Type': `multipart/form-data; boundary=${boundary}`
-        }),
+        header: ApiService.buildHeaders(uploadHeaders),
         extraData: body,
         connectTimeout: ApiService.timeoutMs,
         readTimeout: ApiService.timeoutMs
@@ -423,107 +811,267 @@ export class ApiService {
       client.destroy()
     }
   }
-  
+
   private static arrayBufferToBase64(buffer: ArrayBuffer): string {
     const bytes: Uint8Array = new Uint8Array(buffer)
     const base64Chars: string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
     let result: string = ''
     let padding: number = 0
-    
+
     for (let i: number = 0; i < bytes.length; i += 3) {
       const byte1: number = bytes[i] || 0
       const byte2: number = bytes[i + 1] || 0
       const byte3: number = bytes[i + 2] || 0
-      
+
       const triple: number = (byte1 << 16) | (byte2 << 8) | byte3
-      
+
       result += base64Chars[(triple >> 18) & 63]
       result += base64Chars[(triple >> 12) & 63]
       result += base64Chars[(triple >> 6) & 63]
       result += base64Chars[triple & 63]
-      
+
       if (i + 1 >= bytes.length) padding++
       if (i + 2 >= bytes.length) padding++
     }
-    
+
     return result.substring(0, result.length - padding) + '=='.substring(0, padding)
   }
 
-  static async aiPolish(payload: AiPolishRequest): Promise<AiPolishResponse> {
-    return await ApiService.request<AiPolishResponse>('/ai/polish', http.RequestMethod.POST, payload)
+  // ============================================================
+  // 胶囊
+  // ============================================================
+
+  static async createCapsule(payload: CreateCapsuleRequest): Promise<CreateCapsuleResponse> {
+    return await ApiService.request<CreateCapsuleResponse>('/capsule/create', http.RequestMethod.POST, payload)
   }
 
-  static async aiAsr(payload: AiAsrRequest): Promise<AiAsrResponse> {
-    return await ApiService.request<AiAsrResponse>('/ai/asr', http.RequestMethod.POST, payload)
+  static async listCapsules(query: ListCapsulesQuery): Promise<CapsuleListData> {
+    const q: Record<string, string | number | boolean> = {}
+    if (query.page) { q['page'] = query.page }
+    if (query.pageSize) { q['pageSize'] = query.pageSize }
+    if (query.campus) { q['campus'] = query.campus }
+    if (query.mood) { q['mood'] = query.mood }
+    if (query.timeRange) { q['timeRange'] = query.timeRange }
+    if (query.keyword) { q['keyword'] = query.keyword }
+    const opts: RequestOptions = { query: q }
+    return await ApiService.request<CapsuleListData>('/capsule/list', http.RequestMethod.GET, undefined, opts)
   }
 
-  static async getCapsules(campus: string): Promise<CapsuleListResponse[]> {
-    return await ApiService.request<CapsuleListResponse[]>(`/capsules?campus=${campus}`, http.RequestMethod.GET)
+  static async getCapsuleDetail(capsuleId: number): Promise<CapsuleData> {
+    const q: Record<string, string | number | boolean> = ApiService.makeQueryObj([['id', capsuleId]])
+    const opts: RequestOptions = ApiService.makeOptionsFromQuery(q)
+    return await ApiService.request<CapsuleData>('/capsule/detail', http.RequestMethod.GET, undefined, opts)
   }
 
-  static async getNearbyCapsules(latitude: number, longitude: number, radius: number): Promise<CapsuleListResponse[]> {
-    return await ApiService.request<CapsuleListResponse[]>(
-      `/capsules/nearby?latitude=${latitude}&longitude=${longitude}&radius=${radius}`, 
-      http.RequestMethod.GET
-    )
+  static async toggleLike(capsuleId: number): Promise<LikeResponse> {
+    const body: LikeRequest = { capsuleId: capsuleId }
+    return await ApiService.request<LikeResponse>('/capsule/like', http.RequestMethod.POST, body)
+  }
+
+  static async deleteCapsule(capsuleId: number): Promise<void> {
+    const body: DeleteRequest = { capsuleId: capsuleId }
+    await ApiService.request<void>('/capsule/delete', http.RequestMethod.DELETE, body)
+  }
+
+  static async batchCapsules(capsuleIds: number[], action: string): Promise<void> {
+    const body: BatchRequest = { capsuleIds: capsuleIds, action: action }
+    await ApiService.request<void>('/capsule/batch', http.RequestMethod.POST, body)
+  }
+
+  static async getMyCapsules(query: ListCapsulesQuery): Promise<CapsuleListData> {
+    const q: Record<string, string | number | boolean> = {}
+    if (query.page) { q['page'] = query.page }
+    if (query.pageSize) { q['pageSize'] = query.pageSize }
+    if (query.campus) { q['campus'] = query.campus }
+    if (query.timeRange) { q['timeRange'] = query.timeRange }
+    const opts: RequestOptions = { query: q }
+    return await ApiService.request<CapsuleListData>('/capsule/my', http.RequestMethod.GET, undefined, opts)
+  }
+
+  static async exportCapsules(capsuleIds: number[]): Promise<ExportResponse> {
+    const body: ExportRequest = { capsuleIds: capsuleIds }
+    return await ApiService.request<ExportResponse>('/capsule/export', http.RequestMethod.POST, body)
+  }
+
+  static async getNearbyCapsules(query: NearbyCapsulesQuery): Promise<NearbyCapsulesResponse> {
+    const q: Record<string, string | number | boolean> = {}
+    q['latitude'] = query.latitude
+    q['longitude'] = query.longitude
+    q['radiusMeters'] = query.radiusMeters
+    const opts: RequestOptions = { query: q }
+    return await ApiService.request<NearbyCapsulesResponse>('/capsule/nearby', http.RequestMethod.GET, undefined, opts)
+  }
+
+  static async getCapsulePopup(capsuleId: number): Promise<CapsulePopupData> {
+    const q: Record<string, string | number | boolean> = ApiService.makeQueryObj([['capsuleId', capsuleId]])
+    const opts: RequestOptions = ApiService.makeOptionsFromQuery(q)
+    return await ApiService.request<CapsulePopupData>('/capsule/popup', http.RequestMethod.GET, undefined, opts)
+  }
+
+  static async bindCapsuleLocation(payload: BindLocationRequest): Promise<BindLocationResponse> {
+    return await ApiService.request<BindLocationResponse>('/capsule/location/bind', http.RequestMethod.POST, payload)
+  }
+
+  static async updateCapsulePrivacy(payload: UpdatePrivacyRequest): Promise<UpdatePrivacyResponse> {
+    return await ApiService.request<UpdatePrivacyResponse>('/capsule/privacy/update', http.RequestMethod.POST, payload)
+  }
+
+  // ============================================================
+  // 回复
+  // ============================================================
+
+  static async addReply(capsuleId: number, content: string): Promise<void> {
+    const body: ReplyRequest = { capsuleId: capsuleId, content: content }
+    await ApiService.request<void>('/capsule/reply', http.RequestMethod.POST, body)
+  }
+
+  static async getReplies(capsuleId: number, page?: number, pageSize?: number): Promise<RepliesResponse> {
+    const p = page ?? 1
+    const ps = pageSize ?? 20
+    const q: Record<string, string | number | boolean> = ApiService.makeQueryObj([
+      ['capsuleId', capsuleId], ['page', p], ['pageSize', ps]
+    ])
+    const opts: RequestOptions = ApiService.makeOptionsFromQuery(q)
+    return await ApiService.request<RepliesResponse>('/capsule/replies', http.RequestMethod.GET, undefined, opts)
+  }
+
+  static async getReplyNotifications(page?: number, pageSize?: number): Promise<ReplyNotificationsResponse> {
+    const p = page ?? 1
+    const ps = pageSize ?? 10
+    const q: Record<string, string | number | boolean> = ApiService.makeQueryObj([['page', p], ['pageSize', ps]])
+    const opts: RequestOptions = ApiService.makeOptionsFromQuery(q)
+    return await ApiService.request<ReplyNotificationsResponse>('/capsule/reply/notifications', http.RequestMethod.GET, undefined, opts)
+  }
+
+  static async markReplyNotificationsRead(notificationIds: number[]): Promise<MarkNotificationsReadResponse> {
+    const body: MarkNotificationsReadRequest = { notificationIds: notificationIds }
+    return await ApiService.request<MarkNotificationsReadResponse>('/capsule/reply/notifications/read', http.RequestMethod.POST, body)
+  }
+
+  // ============================================================
+  // 地图
+  // ============================================================
+
+  static async getMapCapsules(campus: string, timeRange: number): Promise<MapCapsulesResponse> {
+    const q: Record<string, string | number | boolean> = ApiService.makeQueryObj([['campus', campus], ['timeRange', timeRange]])
+    const opts: RequestOptions = ApiService.makeOptionsFromQuery(q)
+    return await ApiService.request<MapCapsulesResponse>('/map/capsules', http.RequestMethod.GET, undefined, opts)
+  }
+
+  static async getMapStats(campus: string, timeRange: number): Promise<MapStatsResponse> {
+    const q: Record<string, string | number | boolean> = ApiService.makeQueryObj([['campus', campus], ['timeRange', timeRange]])
+    const opts: RequestOptions = ApiService.makeOptionsFromQuery(q)
+    return await ApiService.request<MapStatsResponse>('/map/stats', http.RequestMethod.GET, undefined, opts)
   }
 
   static async getEmotionStream(updatedAfter?: string): Promise<EmotionStreamResponse> {
-    const url = updatedAfter 
-      ? `/map/emotion-stream?updatedAfter=${updatedAfter}` 
-      : '/map/emotion-stream'
-    return await ApiService.request<EmotionStreamResponse>(url, http.RequestMethod.GET)
+    const q: Record<string, string | number | boolean> = {}
+    if (updatedAfter) {
+      q['updatedAfter'] = updatedAfter
+    }
+    const opts: RequestOptions = { query: q }
+    return await ApiService.request<EmotionStreamResponse>('/map/emotion-stream', http.RequestMethod.GET, undefined, opts)
   }
 
-  static async getComments(capsuleId: string): Promise<CommentResponse[]> {
-    return await ApiService.request<CommentResponse[]>(`/capsules/${capsuleId}/comments`, http.RequestMethod.GET)
+  // ============================================================
+  // 个人主页
+  // ============================================================
+
+  static async getPublishedCapsules(page?: number, pageSize?: number): Promise<PublishedCapsulesResponse> {
+    const p = page ?? 1
+    const ps = pageSize ?? 10
+    const q: Record<string, string | number | boolean> = ApiService.makeQueryObj([['page', p], ['pageSize', ps]])
+    const opts: RequestOptions = ApiService.makeOptionsFromQuery(q)
+    return await ApiService.request<PublishedCapsulesResponse>('/profile/capsules/published', http.RequestMethod.GET, undefined, opts)
   }
 
-  static async addComment(capsuleId: string, text: string): Promise<AddCommentResponse> {
-    const body: AddCommentBody = { text }
-    return await ApiService.request<AddCommentResponse>(
-      `/capsules/${capsuleId}/comments`, 
-      http.RequestMethod.POST, 
-      body
-    )
+  static async getFavoriteCapsules(page?: number, pageSize?: number): Promise<FavoriteCapsulesResponse> {
+    const p = page ?? 1
+    const ps = pageSize ?? 10
+    const q: Record<string, string | number | boolean> = ApiService.makeQueryObj([['page', p], ['pageSize', ps]])
+    const opts: RequestOptions = ApiService.makeOptionsFromQuery(q)
+    return await ApiService.request<FavoriteCapsulesResponse>('/profile/capsules/favorites', http.RequestMethod.GET, undefined, opts)
   }
 
-  static async toggleFavorite(capsuleId: string): Promise<FavoriteResponse> {
-    return await ApiService.request<FavoriteResponse>(
-      `/capsules/${capsuleId}/favorite`, 
-      http.RequestMethod.POST
-    )
+  static async getEmotionDistribution(timeRangeDays?: number): Promise<EmotionDistributionResponse> {
+    const q: Record<string, string | number | boolean> = {}
+    if (timeRangeDays) {
+      q['timeRangeDays'] = timeRangeDays
+    }
+    const opts: RequestOptions = { query: q }
+    return await ApiService.request<EmotionDistributionResponse>('/profile/emotion/distribution', http.RequestMethod.GET, undefined, opts)
   }
 
-  static async getUserProfile(): Promise<UserProfile> {
-    return await ApiService.request<UserProfile>('/user/profile', http.RequestMethod.GET)
+  static async getWeeklyReport(weekOffset?: number): Promise<WeeklyReportResponse> {
+    const q: Record<string, string | number | boolean> = {}
+    if (weekOffset !== undefined) {
+      q['weekOffset'] = weekOffset
+    }
+    const opts: RequestOptions = { query: q }
+    return await ApiService.request<WeeklyReportResponse>('/profile/emotion/weekly-report', http.RequestMethod.GET, undefined, opts)
   }
 
-  static async updateUserProfile(payload: UpdateProfileRequest): Promise<UserProfile> {
-    return await ApiService.request<UserProfile>('/user/profile', http.RequestMethod.PUT, payload)
+  // ============================================================
+  // PC 连接
+  // ============================================================
+
+  static async getPcConnectRequest(): Promise<PcConnectRequestData> {
+    return await ApiService.request<PcConnectRequestData>('/pc/connect/request', http.RequestMethod.GET)
   }
 
-  static async updatePassword(payload: UpdatePasswordRequest): Promise<void> {
-    return await ApiService.request<void>('/user/password', http.RequestMethod.PUT, payload)
+  static async confirmPcConnectRequest(payload: PcConnectConfirmRequest): Promise<PcConnectConfirmResponse> {
+    return await ApiService.request<PcConnectConfirmResponse>('/pc/connect/confirm', http.RequestMethod.POST, payload)
   }
 
-  static async getUserStats(): Promise<UserStats> {
-    return await ApiService.request<UserStats>('/user/stats', http.RequestMethod.GET)
+  static async startPcPair(payload: PcPairStartRequest): Promise<PcPairStartResponse> {
+    return await ApiService.request<PcPairStartResponse>('/pc/connect/pair/start', http.RequestMethod.POST, payload)
   }
 
-  static async getUserCapsules(): Promise<UserCapsule[]> {
-    return await ApiService.request<UserCapsule[]>('/user/capsules', http.RequestMethod.GET)
+  static async getPcPairStatus(pairCode: string): Promise<PcPairStatusResponse> {
+    const q: Record<string, string | number | boolean> = ApiService.makeQueryObj([['pairCode', pairCode]])
+    const opts: RequestOptions = ApiService.makeOptionsFromQuery(q)
+    return await ApiService.request<PcPairStatusResponse>('/pc/connect/pair/status', http.RequestMethod.GET, undefined, opts)
   }
 
-  static async getUserFavorites(): Promise<UserCapsule[]> {
-    return await ApiService.request<UserCapsule[]>('/user/favorites', http.RequestMethod.GET)
+  static async confirmPcPair(payload: PcPairConfirmRequest): Promise<PcPairConfirmResponse> {
+    return await ApiService.request<PcPairConfirmResponse>('/pc/connect/pair/confirm', http.RequestMethod.POST, payload)
   }
 
-  static async getUserMoodDistribution(): Promise<MoodDistribution[]> {
-    return await ApiService.request<MoodDistribution[]>('/user/mood-distribution', http.RequestMethod.GET)
+  // ============================================================
+  // AI
+  // ============================================================
+
+  static async generateNarrative(capsuleIds?: number[], style?: string): Promise<AiNarrativeResponse> {
+    const body: Record<string, Object | undefined> = {}
+    body['capsuleIds'] = capsuleIds
+    body['style'] = style
+    return await ApiService.request<AiNarrativeResponse>('/ai/narrative', http.RequestMethod.POST, body)
   }
 
-  static async getAiMoodReport(): Promise<AiMoodReport> {
-    return await ApiService.request<AiMoodReport>('/ai/mood-report', http.RequestMethod.GET)
+  static async analyzeEmotion(capsuleIds?: number[], period?: string): Promise<AiEmotionItem[]> {
+    const body: Record<string, Object | undefined> = {}
+    body['capsuleIds'] = capsuleIds
+    body['period'] = period
+    return await ApiService.request<AiEmotionItem[]>('/ai/emotion', http.RequestMethod.POST, body)
+  }
+
+  static async aiRewrite(content: string, style?: string): Promise<AiRewriteResponse> {
+    const body: Record<string, Object | undefined> = {}
+    body['content'] = content
+    body['style'] = style
+    return await ApiService.request<AiRewriteResponse>('/ai/rewrite', http.RequestMethod.POST, body)
+  }
+
+  static async aiVoiceOptimize(content: string): Promise<AiVoiceOptimizeResponse> {
+    const body: Record<string, Object> = {}
+    body['content'] = content
+    return await ApiService.request<AiVoiceOptimizeResponse>('/ai/voice/optimize', http.RequestMethod.POST, body)
+  }
+
+  static async aiFormatCode(content: string, language?: string): Promise<AiCodeFormatResponse> {
+    const body: Record<string, Object | undefined> = {}
+    body['content'] = content
+    body['language'] = language
+    return await ApiService.request<AiCodeFormatResponse>('/ai/code/format', http.RequestMethod.POST, body)
   }
 }

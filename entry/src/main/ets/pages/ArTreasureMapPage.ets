@@ -3,7 +3,7 @@ import { router, promptAction } from '@kit.ArkUI'
 import { geoLocationManager } from '@kit.LocationKit';
 import { CapsuleMapMarker } from './components/CapsuleMapMarker'
 import { CircleWave } from './components/CircleWave'
-import { ApiService, CapsuleListResponse, EmotionStreamResponse, EmotionStreamItem, CommentResponse } from '../services/MockApiService'
+import { ApiService, NearbyCapsuleItem, NearbyCapsulesResponse, EmotionStreamResponse, EmotionStreamItem, ReplyItem, RepliesResponse, CapsuleData } from '../services/ApiService'
 import {
   CampusId,
   CampusBounds,
@@ -97,12 +97,12 @@ struct ArTreasureMapPage {
   private async loadNearbyCapsules(): Promise<void> {
     this.loading = true
     try {
-      const response = await ApiService.getNearbyCapsules(
-        this.currentLatitude,
-        this.currentLongitude,
-        NEARBY_RADIUS_METERS
-      )
-      this.capsules = response
+      const response = await ApiService.getNearbyCapsules({
+        latitude: this.currentLatitude,
+        longitude: this.currentLongitude,
+        radiusMeters: NEARBY_RADIUS_METERS
+      })
+      this.capsules = response.capsules
         .filter(item => !item.isPrivate)
         .map(item => this.convertToMapMarker(item))
     } catch (error) {
@@ -117,10 +117,9 @@ struct ArTreasureMapPage {
   private async loadCapsules(): Promise<void> {
     this.loading = true
     try {
-      const response = await ApiService.getCapsules(this.campus)
-      this.capsules = response
-        .filter(item => !item.isPrivate)
-        .map(item => this.convertToMapMarker(item))
+      const response = await ApiService.listCapsules({ campus: this.campus })
+      this.capsules = response.list
+        .map(item => this.convertCapsuleDataToMapMarker(item))
     } catch (error) {
       console.error('Failed to load capsules:', error)
       this.capsules = this.getDefaultMarkers()
@@ -166,21 +165,41 @@ struct ArTreasureMapPage {
     }
   }
 
-  private convertToMapMarker(item: CapsuleListResponse): MapCapsuleMarker {
-    const moodKind = moodKindFromPublishTag(item.moodTag)
+  private convertToMapMarker(item: NearbyCapsuleItem): MapCapsuleMarker {
+    const moodKind = moodKindFromPublishTag(item.mood)
     return {
-      id: item.id,
+      id: String(item.capsuleId),
       campus: this.campus,
       moodKind: moodKind,
-      moodLabel: this.getMoodLabel(moodKind),
+      moodLabel: item.mood,
       moodEmoji: this.getMoodEmoji(moodKind),
       locationName: item.location,
-      content: item.content,
-      timeAgo: this.formatTimeAgo(item.createdAt),
+      content: item.title,
+      timeAgo: this.formatTimeAgo(item.publishedAt),
       latitude: item.latitude,
       longitude: item.longitude,
       distanceMeters: item.distanceMeters,
-      lightCount: item.likes,
+      lightCount: 0,
+      isLitByMe: false,
+      replies: []
+    }
+  }
+
+  private convertCapsuleDataToMapMarker(item: CapsuleData): MapCapsuleMarker {
+    const moodKind = moodKindFromPublishTag(item.mood)
+    return {
+      id: String(item.id),
+      campus: this.campus,
+      moodKind: moodKind,
+      moodLabel: item.mood,
+      moodEmoji: this.getMoodEmoji(moodKind),
+      locationName: item.location,
+      content: item.summary,
+      timeAgo: this.formatTimeAgo(new Date(item.timestamp).toISOString()),
+      latitude: item.latitude,
+      longitude: item.longitude,
+      distanceMeters: 0,
+      lightCount: 0,
       isLitByMe: false,
       replies: []
     }
@@ -291,18 +310,20 @@ struct ArTreasureMapPage {
 
   private async loadComments(capsuleId: string): Promise<void> {
     try {
-      const comments: CommentResponse[] = await ApiService.getComments(capsuleId)
+      const capsuleIdNum = parseInt(capsuleId)
+      if (isNaN(capsuleIdNum)) return
+      const response = await ApiService.getReplies(capsuleIdNum)
       this.capsules = this.capsules.map((c: MapCapsuleMarker) => {
         if (c.id !== capsuleId) {
           return c
         }
-        const replies: AnonymousReplyItem[] = comments.map((comment: CommentResponse) => {
-          const reply: AnonymousReplyItem = {
-            id: comment.id,
-            text: comment.text,
-            timeAgo: this.formatTimeAgo(comment.createdAt)
+        const replies: AnonymousReplyItem[] = response.list.map((reply: ReplyItem) => {
+          const r: AnonymousReplyItem = {
+            id: String(reply.id),
+            text: reply.content,
+            timeAgo: this.formatTimeAgo(reply.createdAt)
           }
-          return reply
+          return r
         })
         const updatedCapsule: MapCapsuleMarker = {
           id: c.id,
@@ -347,17 +368,12 @@ struct ArTreasureMapPage {
       return
     }
     try {
-      const response = await ApiService.toggleFavorite(c.id)
-      if (response.success) {
-        c.isLitByMe = response.favorited
-        if (response.favorited) {
-          c.lightCount = c.lightCount + 1
-          promptAction.showToast({ message: '收藏成功' })
-        } else {
-          c.lightCount = Math.max(0, c.lightCount - 1)
-          promptAction.showToast({ message: '取消收藏' })
-        }
-      }
+      const capsuleIdNum = parseInt(c.id)
+      if (isNaN(capsuleIdNum)) return
+      const response = await ApiService.toggleLike(capsuleIdNum)
+      c.isLitByMe = response.isLiked
+      c.lightCount = response.likeCount
+      promptAction.showToast({ message: response.isLiked ? '收藏成功' : '取消收藏' })
     } catch (error) {
       console.error('Failed to toggle favorite:', error)
       promptAction.showToast({ message: '操作失败，请重试' })
@@ -370,13 +386,14 @@ struct ArTreasureMapPage {
       return
     }
     try {
-      const response = await ApiService.addComment(this.selectedCapsuleId, text)
-      if (response.success) {
-        const newItem: AnonymousReplyItem = {
-          id: response.commentId,
-          text,
-          timeAgo: '刚刚'
-        }
+      const capsuleIdNum = parseInt(this.selectedCapsuleId)
+      if (isNaN(capsuleIdNum)) return
+      await ApiService.addReply(capsuleIdNum, text)
+      const newItem: AnonymousReplyItem = {
+        id: String(Date.now()),
+        text,
+        timeAgo: '刚刚'
+      }
         this.capsules = this.capsules.map((c: MapCapsuleMarker) => {
           if (c.id !== this.selectedCapsuleId) {
             return c
@@ -406,7 +423,6 @@ struct ArTreasureMapPage {
         })
         this.replyDraft = ''
         promptAction.showToast({ message: '评论成功' })
-      }
     } catch (error) {
       console.error('Failed to send reply:', error)
       promptAction.showToast({ message: '评论失败，请重试' })

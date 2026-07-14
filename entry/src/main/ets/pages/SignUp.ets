@@ -1,7 +1,7 @@
 import { router, promptAction } from '@kit.ArkUI'
 import { LoginTheme } from './models/ThemeConstants'
 import { AuthState } from '../services/UserSessions'
-import { ApiService } from '../services/MockApiService'
+import { ApiService } from '../services/ApiService'
 //import { picker } from '@kit.ArkUI'
 import { Permissions } from '@kit.AbilityKit'
 import { BusinessError } from '@kit.BasicServicesKit'
@@ -97,7 +97,7 @@ struct RegisterPage {
     }
     this.busy = true
     try {
-      await ApiService.sendCode({ phone: p })
+      await ApiService.sendCode({ phone: p, type: 'register' })
       promptAction.showToast({ message: '验证码已发送' })
       this.codeSeconds = 60
       this.clearCodeTimer()
@@ -121,18 +121,19 @@ struct RegisterPage {
     this.busy = true
     try {
       const response = await ApiService.register({
+        avatar: this.avatarUri,
         nickname: this.nickname.trim(),
         phone: this.phone.trim(),
         code: this.verifyCode.trim(),
         password: this.password,
         grade: this.gradeText,
         college: this.collegeText,
-        avatar: this.avatarUri
+        agreeProtocol: this.agreed
       })
       await AuthState.saveLoginState(
         response.token,
-        response.userId,
-        response.nickname,
+        String(response.userInfo.userId),
+        response.userInfo.nickname,
         this.maskPhone(this.phone)
       )
       ApiService.setAuthToken(response.token)
@@ -369,7 +370,26 @@ struct RegisterPage {
 
   @Builder
   private phoneField() {
-    this.fieldRow($r('app.media.signup_phone'),'请输入手机号')
+    Row() {
+      Image($r('app.media.signup_phone'))
+        .width(22)
+        .margin({ left: 10 })
+      TextInput({ text: $$this.phone, placeholder: '请输入手机号' })
+        .layoutWeight(1)
+        .height(52)
+        .fontSize(16)
+        .type(InputType.PhoneNumber)
+        .maxLength(11)
+        .placeholderColor(LoginTheme.PLACEHOLDER)
+        .backgroundColor(LoginTheme.INPUT_BG)
+        .border({ width: 0 })
+        .padding({ right: 16 })
+    }
+    .width('100%')
+    .alignItems(VerticalAlign.Center)
+    .backgroundColor(LoginTheme.INPUT_BG)
+    .borderRadius(16)
+    .border({ width: 1, color: LoginTheme.INPUT_BORDER })
   }
 
   //验证码

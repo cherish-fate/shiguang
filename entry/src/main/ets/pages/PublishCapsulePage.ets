@@ -1,5 +1,5 @@
 import { router, promptAction } from '@kit.ArkUI'
-import { ApiService, CapsuleType, PublishCapsuleRequest } from '../services/MockApiService'
+import { ApiService, CreateCapsuleRequest } from '../services/ApiService'
 //import { picker } from '@kit.MediaLibraryKit'
 //import { audio } from '@kit.MultimediaKit'
 import { BusinessError } from '@kit.BasicServicesKit'
@@ -62,7 +62,7 @@ const MOOD_THEMES: Record<string, MoodTheme> = {
 @Entry
 @Component
 struct PublishCapsulePage {
-  @State contentType: CapsuleType = 'text'
+  @State contentType: string = 'text'
   @State content: string = ''
   @State selectedMood: string = '# 焦虑蓝'
   @State submitting: boolean = false
@@ -155,10 +155,7 @@ struct PublishCapsulePage {
       const buffer: Uint8Array = new Uint8Array(bufferSize)
       const readBuffer: ArrayBuffer = await capturer.read(bufferSize, true)
       if (readBuffer && readBuffer.byteLength > 0) {
-        const base64Audio: string = this.arrayBufferToBase64(readBuffer)
-        const response = await ApiService.aiAsr({ audioBase64: base64Audio })
-        this.content += response.text
-        promptAction.showToast({ message: '语音转文字成功' })
+        promptAction.showToast({ message: '语音录制完成，请使用AI语音优化功能' })
       }
     } catch (error) {
       console.error('Failed to stop recording:', error)
@@ -203,8 +200,8 @@ struct PublishCapsulePage {
     }
     this.aiPolishing = true
     try {
-      const response = await ApiService.aiPolish({ content: this.content })
-      this.aiSuggestion = response.content
+      const response = await ApiService.aiRewrite(this.content)
+      this.aiSuggestion = response.polishedText
       promptAction.showToast({ message: 'AI润色完成' })
     } catch (error) {
       console.error('Failed to polish content:', error)
@@ -230,16 +227,20 @@ struct PublishCapsulePage {
       return
     }
     this.submitting = true
-    const request: PublishCapsuleRequest = {
-      type: this.contentType,
-      moodTag: this.selectedMood,
-      content: this.content.trim(),
-      attachments: this.attachments,
-      location: this.location.trim(),
-      isPrivate: this.isPrivate
+    const request: CreateCapsuleRequest = {
+      campus: 'jinming',
+      title: this.content.trim().substring(0, 50),
+      summary: this.content.trim(),
+      location: this.location.trim() || '未指定位置',
+      latitude: 34.815278,
+      longitude: 114.302222,
+      mood: this.selectedMood,
+      color: this.getMoodColor(this.selectedMood),
+      images: this.attachments.length > 0 ? this.attachments : undefined,
+      isPublic: !this.isPrivate
     }
     try {
-      await ApiService.publishCapsule(request)
+      await ApiService.createCapsule(request)
       promptAction.showToast({ message: '发布成功' })
       router.pushUrl({ url: 'pages/ArTreasureMapPage' })
     } catch (_) {
@@ -247,6 +248,18 @@ struct PublishCapsulePage {
     } finally {
       this.submitting = false
     }
+  }
+
+  private getMoodColor(mood: string): string {
+    const colors: Record<string, string> = {
+      '# 焦虑蓝': '#5DADE2',
+      '# 浪漫粉': '#E8917E',
+      '# 活力黄': '#F5A623',
+      '# 极客紫': '#9B59B6',
+      '# 平静青': '#4A90D9',
+      '# 孤独灰': '#7F8C8D'
+    }
+    return colors[mood] || '#6B7280'
   }
 
   build() {

@@ -1,5 +1,5 @@
 import { router, promptAction } from '@kit.ArkUI'
-import { ApiService, UserProfile, UpdateProfileRequest, UpdatePasswordRequest } from '../services/MockApiService'
+import { ApiService, UserProfile, UpdateProfileRequest, ChangePasswordRequest } from '../services/ApiService'
 import { picker } from '@kit.CoreFileKit';
 import { showInputDialog } from '../components/InputDialog'
 
@@ -32,8 +32,8 @@ struct AccountSettingsPage {
       const profile: UserProfile = await ApiService.getUserProfile()
       this.nickname = profile.nickname
       this.phone = this.maskPhone(profile.phone)
-      this.grade = profile.grade
-      this.college = profile.college
+      this.grade = '未设置'
+      this.college = '未设置'
       this.avatarUrl = profile.avatar || 'app.media.default_avatar'
     } catch (error) {
       console.error('Failed to load user profile:', error)
@@ -125,11 +125,11 @@ struct AccountSettingsPage {
               return
             }
             try {
-              const payload: UpdatePasswordRequest = {
+              const payload: ChangePasswordRequest = {
                 oldPassword: oldPassword,
                 newPassword: newPassword
               }
-              await ApiService.updatePassword(payload)
+              await ApiService.changePassword(payload)
               promptAction.showToast({ message: '密码修改成功' })
             } catch (error) {
               console.error('Failed to update password:', error)
@@ -153,10 +153,8 @@ struct AccountSettingsPage {
           return
         }
         try {
-          const payload: UpdateProfileRequest = { grade: newGrade }
-          const profile: UserProfile = await ApiService.updateUserProfile(payload)
-          this.grade = profile.grade
-          promptAction.showToast({ message: '年级修改成功' })
+          this.grade = newGrade.trim()
+          promptAction.showToast({ message: '年级修改成功（本地记录）' })
         } catch (error) {
           console.error('Failed to update grade:', error)
           promptAction.showToast({ message: '年级修改失败' })
@@ -177,10 +175,8 @@ struct AccountSettingsPage {
           return
         }
         try {
-          const payload: UpdateProfileRequest = { college: newCollege }
-          const profile: UserProfile = await ApiService.updateUserProfile(payload)
-          this.college = profile.college
-          promptAction.showToast({ message: '学院修改成功' })
+          this.college = newCollege.trim()
+          promptAction.showToast({ message: '学院修改成功（本地记录）' })
         } catch (error) {
           console.error('Failed to update college:', error)
           promptAction.showToast({ message: '学院修改失败' })

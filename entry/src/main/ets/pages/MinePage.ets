@@ -1,6 +1,6 @@
 import { router, promptAction } from '@kit.ArkUI'
 import { AuthState } from '../services/UserSessions'
-import { ApiService, UserProfile, UserStats, UserCapsule, MoodDistribution, AiMoodReport } from '../services/MockApiService'
+import { ApiService, UserProfile, PublishedCapsulesResponse, FavoriteCapsulesResponse, EmotionDistributionResponse, EmotionDistributionItem, WeeklyReportResponse, WeekRange, MoodTrend, PublishedCapsuleItem, FavoriteCapsuleItem } from '../services/ApiService'
 import { LoginTheme } from './models/ThemeConstants'
 import { MainTabBar, MainTabBarSlot } from './components/MainTabBar'
 
@@ -45,12 +45,19 @@ struct MinePage {
   @State private publishGridMode: boolean = true
   @State private notifyEnabled: boolean = true
   
-  @State private userProfile: UserProfile = { nickname: '', grade: '', college: '', avatar: '', phone: '' }
-  @State private userStats: UserStats = { capsuleCount: 0, favoriteCount: 0, locationCount: 0 }
-  @State private userCapsules: UserCapsule[] = []
-  @State private userFavorites: UserCapsule[] = []
-  @State private moodDistribution: MoodDistribution[] = []
-  @State private aiMoodReport: AiMoodReport = { summary: '', suggestions: [] }
+  @State private userProfile: UserProfile = { userId: 0, phone: '', nickname: '', avatar: '' }
+  @State private capsuleCount: number = 0
+  @State private favoriteCount: number = 0
+  @State private locationCount: number = 0
+  @State private publishedCapsules: PublishedCapsulesResponse | null = null
+  @State private favoriteCapsules: FavoriteCapsulesResponse | null = null
+  @State private emotionDistribution: EmotionDistributionItem[] = []
+  @State private weeklyReport: WeeklyReportResponse = {
+    weekRange: { startDate: '', endDate: '' },
+    summary: '',
+    trend: { risingMoods: [], fallingMoods: [] },
+    suggestions: []
+  }
   @State private topMoodTags: string[] = []
   @State private isLoading: boolean = true
 
@@ -61,27 +68,25 @@ struct MinePage {
   private async loadUserData(): Promise<void> {
     this.isLoading = true
     try {
-      const results: (UserProfile | UserStats | UserCapsule[] | MoodDistribution[] | AiMoodReport)[] = await Promise.all([
+      const results = await Promise.all([
         ApiService.getUserProfile(),
-        ApiService.getUserStats(),
-        ApiService.getUserCapsules(),
-        ApiService.getUserFavorites(),
-        ApiService.getUserMoodDistribution(),
-        ApiService.getAiMoodReport()
+        ApiService.getPublishedCapsules(),
+        ApiService.getFavoriteCapsules(),
+        ApiService.getEmotionDistribution(),
+        ApiService.getWeeklyReport()
       ])
-      
+
       this.userProfile = results[0] as UserProfile
-      this.userStats = results[1] as UserStats
-      this.userCapsules = results[2] as UserCapsule[]
-      this.userFavorites = results[3] as UserCapsule[]
-      this.moodDistribution = results[4] as MoodDistribution[]
-      this.aiMoodReport = results[5] as AiMoodReport
-      
-      const distResults: MoodDistribution[] = results[4] as MoodDistribution[]
-      this.topMoodTags = distResults
-        .sort((a: MoodDistribution, b: MoodDistribution) => b.percent - a.percent)
-        .slice(0, 3)
-        .map((item: MoodDistribution) => item.label)
+      this.publishedCapsules = results[1] as PublishedCapsulesResponse
+      this.favoriteCapsules = results[2] as FavoriteCapsulesResponse
+      const distResp = results[3] as EmotionDistributionResponse
+      this.emotionDistribution = distResp.distribution
+      this.capsuleCount = distResp.totalCapsules
+      this.favoriteCount = (results[2] as FavoriteCapsulesResponse).pagination.total
+      this.locationCount = 0
+      this.weeklyReport = results[4] as WeeklyReportResponse
+
+      this.topMoodTags = distResp.topThreeTags
     } catch (error) {
       console.error('Failed to load user data:', error)
       this.loadDefaultData()
@@ -94,25 +99,28 @@ struct MinePage {
 
   private loadDefaultData(): void {
     this.userProfile = {
+      userId: 0,
       nickname: AuthState.nickname || '用户',
-      grade: '2021级',
-      college: '计算机学院',
-      avatar: '',
-      phone: ''
-    }
-    this.userStats = { capsuleCount: 4, favoriteCount: 4, locationCount: 8 }
-    this.moodDistribution = [
-      { label: '平静', count: 12, percent: 35 },
-      { label: '快乐', count: 8, percent: 24 },
-      { label: '焦虑', count: 6, percent: 18 },
-      { label: '浪漫', count: 4, percent: 12 },
-      { label: '孤独', count: 3, percent: 9 }
+      phone: '',
+      avatar: ''
+    } as UserProfile
+    this.capsuleCount = 4
+    this.favoriteCount = 4
+    this.locationCount = 8
+    this.emotionDistribution = [
+      { mood: '平静', count: 12, percentage: 35 } as EmotionDistributionItem,
+      { mood: '快乐', count: 8, percentage: 24 } as EmotionDistributionItem,
+      { mood: '焦虑', count: 6, percentage: 18 } as EmotionDistributionItem,
+      { mood: '浪漫', count: 4, percentage: 12 } as EmotionDistributionItem,
+      { mood: '孤独', count: 3, percentage: 9 } as EmotionDistributionItem
     ]
     this.topMoodTags = ['平静', '快乐', '浪漫']
-    this.aiMoodReport = {
+    this.weeklyReport = {
+      weekRange: { startDate: '', endDate: '' } as WeekRange,
       summary: '本周你的情绪整体偏平静，焦虑指数较上周下降；建议在忙碌日程中保留小块放松时间，有助于维持正向循环。',
-      suggestions: []
-    }
+      trend: { risingMoods: [] as string[], fallingMoods: [] as string[] } as MoodTrend,
+      suggestions: [] as string[]
+    } as WeeklyReportResponse
   }
 
   private getMoodInfo(moodTag: string): MoodTagInfo {
@@ -205,7 +213,7 @@ struct MinePage {
               .width(14)
               .fillColor('#8a8a8a')
           }
-          Text(`${this.userProfile.grade || '2021级'} · ${this.userProfile.college || '计算机学院'}`)
+          Text('拾光印记用户')
             .fontSize(13)
             .fontColor('#6B7280')
           Flex({ wrap: FlexWrap.Wrap }) {
@@ -229,9 +237,9 @@ struct MinePage {
       .width('100%')
 
       Row() {
-        this.StatColumn($r('app.media.signup_position'), `${this.userStats.capsuleCount}`, '胶囊')
-        this.StatColumn($r('app.media.signup_collect'), `${this.userStats.favoriteCount}`, '收藏')
-        this.StatColumn($r('app.media.signup_achi'), `${this.userStats.locationCount}`, '成就')
+        this.StatColumn($r('app.media.signup_position'), `${this.capsuleCount}`, '胶囊')
+        this.StatColumn($r('app.media.signup_collect'), `${this.favoriteCount}`, '收藏')
+        this.StatColumn($r('app.media.signup_achi'), `${this.locationCount}`, '成就')
       }
       .width('100%')
       .justifyContent(FlexAlign.SpaceAround)
@@ -299,17 +307,17 @@ struct MinePage {
   }
 
   @Builder
-  private CapsuleCard(item: UserCapsule, showEditDelete: boolean) {
+  private PublishedCapsuleCard(item: PublishedCapsuleItem) {
     Column({ space: 8 }) {
       Row() {
         Row() {
-          Image(this.getMoodEmoji(item.moodTag))
+          Image(this.getMoodEmoji(item.mood))
             .width(18)
-          Text(this.getMoodLabel(item.moodTag))
+          Text(item.mood)
             .fontSize(11)
         }
         .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-        .backgroundColor(this.getMoodBg(item.moodTag))
+        .backgroundColor(this.getMoodBg(item.mood))
         .borderRadius(10)
         .margin({ right: 6, bottom: 4 })
         Blank()
@@ -336,7 +344,7 @@ struct MinePage {
         Text('·')
           .fontSize(11)
           .fontColor('#D1D5DB')
-        Text(this.formatTimeAgo(item.createdAt))
+        Text(item.timeAgo)
           .fontSize(11)
           .fontColor('#9CA3AF')
       }
@@ -345,34 +353,28 @@ struct MinePage {
       Row({ space: 16 }) {
         Row({ space: 4 }) {
           Image($r('app.media.signup_collect')).width(12)
-          Text(`${item.likes}`).fontSize(12).fontColor('#6B7280')
-        }
-        Row({ space: 4 }) {
-          Image($r('app.media.mine_eye')).width(12)
-          Text(`${item.views}`).fontSize(12).fontColor('#6B7280')
+          Text(`${item.visibilityLabel}`).fontSize(12).fontColor('#6B7280')
         }
       }
 
-      if (showEditDelete) {
-        Row() {
-          Blank()
-          Text('编辑')
-            .fontSize(13)
-            .fontColor('#2563EB')
-            .margin({ right: 12 })
-            .onClick((): void => {
-              promptAction.showToast({ message: '编辑（演示）' })
-            })
-          Text('删除')
-            .fontSize(13)
-            .fontColor('#EF4444')
-            .onClick((): void => {
-              promptAction.showToast({ message: '删除（演示）' })
-            })
-        }
-        .width('100%')
-        .margin({ top: 4 })
+      Row() {
+        Blank()
+        Text('编辑')
+          .fontSize(13)
+          .fontColor('#2563EB')
+          .margin({ right: 12 })
+          .onClick((): void => {
+            promptAction.showToast({ message: '编辑（演示）' })
+          })
+        Text('删除')
+          .fontSize(13)
+          .fontColor('#EF4444')
+          .onClick((): void => {
+            promptAction.showToast({ message: '删除（演示）' })
+          })
       }
+      .width('100%')
+      .margin({ top: 4 })
     }
     .width('100%')
     .padding(12)
@@ -381,6 +383,19 @@ struct MinePage {
     .borderRadius(16)
     .alignItems(HorizontalAlign.Start)
     .shadow({ radius: 8, color: '#12000000', offsetX: 0, offsetY: 2 })
+  }
+
+  @Builder
+  private CapsuleCard(item: PublishedCapsuleItem) {
+    this.PublishedCapsuleCard(item)
+  }
+
+  private defaultWeeklyReport(): WeeklyReportResponse {
+    const weekRange: WeekRange = { startDate: '', endDate: '' }
+    const trend: MoodTrend = { risingMoods: [] as string[], fallingMoods: [] as string[] }
+    const suggestions: string[] = []
+    const report: WeeklyReportResponse = { weekRange: weekRange, summary: '', trend: trend, suggestions: suggestions }
+    return report
   }
 
   private getMoodLabel(moodTag: string): string {
@@ -418,7 +433,7 @@ struct MinePage {
       }
       .width('100%')
 
-      if (this.userCapsules.length === 0) {
+      if (!this.publishedCapsules || this.publishedCapsules.items.length === 0) {
         Column({ space: 12 }) {
           Image($r('app.media.mine_avatar'))
             .width(60)
@@ -440,20 +455,20 @@ struct MinePage {
         .borderRadius(20)
       } else if (this.publishGridMode) {
         Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.SpaceBetween }) {
-          ForEach(this.userCapsules, (item: UserCapsule) => {
+          ForEach(this.publishedCapsules!.items, (item: PublishedCapsuleItem) => {
             Column() {
-              this.CapsuleCard(item, true)
+              this.PublishedCapsuleCard(item)
             }
             .margin({ bottom: 10 })
             .width('48%')
-          }, (item: UserCapsule) => item.id)
+          }, (item: PublishedCapsuleItem) => `${item.capsuleId}`)
         }
         .width('100%')
       } else {
         Column({ space: 12 }) {
-          ForEach(this.userCapsules, (item: UserCapsule) => {
-            this.CapsuleCard(item, true)
-          }, (item: UserCapsule) => item.id)
+          ForEach(this.publishedCapsules!.items, (item: PublishedCapsuleItem) => {
+            this.PublishedCapsuleCard(item)
+          }, (item: PublishedCapsuleItem) => `${item.capsuleId}`)
         }
         .width('100%')
       }
@@ -472,7 +487,7 @@ struct MinePage {
       }
       .width('100%')
 
-      if (this.userFavorites.length === 0) {
+      if (!this.favoriteCapsules || this.favoriteCapsules.items.length === 0) {
         Column({ space: 12 }) {
           Image($r('app.media.signup_collect'))
             .width(60)
@@ -487,12 +502,12 @@ struct MinePage {
         .borderRadius(20)
       } else {
         Flex({ wrap: FlexWrap.Wrap, justifyContent: FlexAlign.SpaceBetween }) {
-          ForEach(this.userFavorites, (item: UserCapsule) => {
+          ForEach(this.favoriteCapsules!.items, (item: FavoriteCapsuleItem) => {
             Column() {
-              this.CapsuleCard(item, false)
+              this.FavoriteCapsuleCard(item)
             }
             .width('48%')
-          }, (item: UserCapsule) => item.id)
+          }, (item: FavoriteCapsuleItem) => `${item.capsuleId}`)
         }
         .width('100%')
 
@@ -526,18 +541,18 @@ struct MinePage {
             .fontWeight(FontWeight.Medium)
             .fontColor('#ff141a28')
         }
-        Text(this.aiMoodReport.summary || '本周你的情绪整体偏平静，焦虑指数较上周下降；建议在忙碌日程中保留小块放松时间，有助于维持正向循环。')
+        Text(this.weeklyReport.summary || '本周你的情绪整体偏平静，焦虑指数较上周下降；建议在忙碌日程中保留小块放松时间，有助于维持正向循环。')
           .fontSize(13)
           .fontColor('#ff141a28')
           .lineHeight(22)
-        
-        if (this.aiMoodReport.suggestions && this.aiMoodReport.suggestions.length > 0) {
+
+        if (this.weeklyReport.suggestions && this.weeklyReport.suggestions.length > 0) {
           Column({ space: 8 }) {
             Text('💡 建议')
               .fontSize(13)
               .fontWeight(FontWeight.Medium)
               .fontColor('#ff141a28')
-            ForEach(this.aiMoodReport.suggestions, (suggestion: string, idx: number) => {
+            ForEach(this.weeklyReport.suggestions, (suggestion: string, idx: number) => {
               Text(`${idx + 1}. ${suggestion}`)
                 .fontSize(12)
                 .fontColor('#6B7280')
@@ -558,29 +573,29 @@ struct MinePage {
           .fontColor('#111827')
           .width('100%')
 
-        ForEach(this.moodDistribution, (row: MoodDistribution, idx: number) => {
+        ForEach(this.emotionDistribution, (row: EmotionDistributionItem, idx: number) => {
           Row({ space: 10 }) {
-            Text(row.label)
+            Text(row.mood)
               .fontSize(13)
               .fontColor('#374151')
               .width(40)
             Progress({
-              value: row.percent,
+              value: row.percentage,
               total: 100,
               type: ProgressType.Linear
             })
               .layoutWeight(1)
               .height(8)
-              .color(this.getMoodBarColor(row.label))
+              .color(this.getMoodBarColor(row.mood))
               .backgroundColor('#F3F4F6')
-            Text(`${row.count} 次 · ${row.percent}%`)
+            Text(`${row.count} 次 · ${row.percentage}%`)
               .fontSize(11)
               .fontColor('#6B7280')
               .width(72)
               .textAlign(TextAlign.End)
           }
           .width('100%')
-        }, (row: MoodDistribution, idx: number) => `mood_${idx}_${row.label}`)
+        }, (row: EmotionDistributionItem, idx: number) => `mood_${idx}_${row.mood}`)
       }
       .width('100%')
       .padding(16)
@@ -595,15 +610,15 @@ struct MinePage {
           .fontColor('#111827')
           .width('100%')
         Flex({ wrap: FlexWrap.Wrap }) {
-          ForEach(this.moodDistribution.slice(0, 5), (item: MoodDistribution, i: number) => {
-            Text(`${item.label} (${item.count})`)
+          ForEach(this.emotionDistribution.slice(0, 5), (item: EmotionDistributionItem, i: number) => {
+            Text(`${item.mood} (${item.count})`)
               .fontSize(12)
               .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-              .backgroundColor(this.getMoodBg(item.label))
+              .backgroundColor(this.getMoodBg(item.mood))
               .borderRadius(12)
               .margin({ right: 8, bottom: 8 })
               .fontColor('#374151')
-          }, (item: MoodDistribution, i: number) => `tag_${i}`)
+          }, (item: EmotionDistributionItem, i: number) => `tag_${i}`)
         }
         .width('100%')
       }
@@ -659,6 +674,52 @@ struct MinePage {
       .shadow({ radius: 10, color: '#14000000', offsetX: 0, offsetY: 4 })
     }
     .width('100%')
+  }
+
+  @Builder
+  private FavoriteCapsuleCard(item: FavoriteCapsuleItem) {
+    Column({ space: 8 }) {
+      Row() {
+        Row() {
+          Image(this.getMoodEmoji(item.mood))
+            .width(18)
+          Text(item.mood)
+            .fontSize(11)
+        }
+        .padding({ left: 8, right: 8, top: 4, bottom: 4 })
+        .backgroundColor(this.getMoodBg(item.mood))
+        .borderRadius(10)
+        .margin({ right: 6, bottom: 4 })
+        Blank()
+        SymbolGlyph(item.isPrivate ? $r('sys.symbol.lock_fill') : $r('app.media.default_avater'))
+          .fontSize(16)
+          .fontColor(['#9CA3AF'])
+      }
+      .width('100%')
+
+      Text(item.title)
+        .fontSize(13)
+        .fontColor('#374151')
+        .maxLines(2)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+
+      Row({ space: 4 }) {
+        Image($r('app.media.signup_position'))
+          .width(12)
+          .fillColor('#ffa4a8a9')
+        Text(item.location)
+          .fontSize(11)
+          .fontColor('#9CA3AF')
+      }
+      .width('100%')
+    }
+    .width('100%')
+    .padding(12)
+    .margin({ bottom: 10 })
+    .backgroundColor(Color.White)
+    .borderRadius(16)
+    .alignItems(HorizontalAlign.Start)
+    .shadow({ radius: 8, color: '#12000000', offsetX: 0, offsetY: 2 })
   }
 
   @Builder
@@ -804,10 +865,13 @@ struct MinePage {
     .shadow({ radius: 16, color: '#33000000', offsetX: 0, offsetY: 6 })
     .onClick((): void => {
       AuthState.clearLoginState()
-      this.userProfile = { nickname: '', grade: '', college: '', avatar: '', phone: '' }
-      this.userStats = { capsuleCount: 0, favoriteCount: 0, locationCount: 0 }
-      this.userCapsules = []
-      this.userFavorites = []
+      this.userProfile = { userId: 0, nickname: '', phone: '', avatar: '' } as UserProfile
+      this.capsuleCount = 0
+      this.favoriteCount = 0
+      this.locationCount = 0
+      this.emotionDistribution = []
+      this.publishedCapsules = null
+      this.favoriteCapsules = null
       router.pushUrl({ url: 'pages/Login' })
     })
   }
