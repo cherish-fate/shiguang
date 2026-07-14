@@ -2,7 +2,7 @@ import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.Ab
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { AuthState } from '../services/UserSessions';
-import { ApiService } from '../services/MockApiService';
+import { ApiService } from '../services/ApiService';
 
 const DOMAIN = 0x0000;
 

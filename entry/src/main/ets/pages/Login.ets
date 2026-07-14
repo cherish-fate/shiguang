@@ -1,7 +1,7 @@
 import { router, promptAction } from '@kit.ArkUI'
 import { LoginTheme } from './models/ThemeConstants'
 import { AuthState } from '../services/UserSessions'
-import { ApiService } from '../services/MockApiService'
+import { ApiService } from '../services/ApiService'
 
 @Entry
 @Component
@@ -54,7 +54,7 @@ struct LoginPage {
     }
     this.busy = true
     try {
-      await ApiService.sendCode({ phone: this.phone.trim() })
+      await ApiService.sendCode({ phone: this.phone.trim(), type: 'login' })
       promptAction.showToast({ message: '验证码已发送' })
       this.codeSeconds = 60
       this.clearCodeTimer()
@@ -94,12 +94,13 @@ struct LoginPage {
     try {
       const response = await ApiService.login({
         phone: this.phone.trim(),
-        code: this.verifyCode.trim()
+        code: this.verifyCode.trim(),
+        agreeProtocol: this.agreed
       })
       await AuthState.saveLoginState(
         response.token,
-        response.userId,
-        response.nickname,
+        String(response.userInfo.userId),
+        response.userInfo.nickname,
         this.maskPhone(this.phone)
       )
       ApiService.setAuthToken(response.token)
