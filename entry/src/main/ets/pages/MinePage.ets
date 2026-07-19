@@ -25,7 +25,14 @@ const moodTagMap: Record<string, MoodTagInfo> = {
   'geek': { label: '极客', emoji: $r('app.media.mine_calm'), bg: '#DBEAFE' },
   'calm': { label: '平静', emoji: $r('app.media.mine_calm'), bg: '#DBEAFE' },
   'lone': { label: '孤独', emoji: $r('app.media.mine_alone'), bg: '#F3F4F6' },
-  'happy': { label: '快乐', emoji: $r('app.media.mine_happy'), bg: '#FEF9C3' }
+  'happy': { label: '快乐', emoji: $r('app.media.mine_happy'), bg: '#FEF9C3' },
+  '焦虑': { label: '焦虑', emoji: $r('app.media.mine_anxiety'), bg: '#F3E8FF' },
+  '浪漫': { label: '浪漫', emoji: $r('app.media.mine_romance'), bg: '#FCE7F3' },
+  '活力': { label: '活力', emoji: $r('app.media.mine_happy'), bg: '#FEF9C3' },
+  '极客': { label: '极客', emoji: $r('app.media.mine_calm'), bg: '#DBEAFE' },
+  '平静': { label: '平静', emoji: $r('app.media.mine_calm'), bg: '#DBEAFE' },
+  '孤独': { label: '孤独', emoji: $r('app.media.mine_alone'), bg: '#F3F4F6' },
+  '快乐': { label: '快乐', emoji: $r('app.media.mine_happy'), bg: '#FEF9C3' }
 }
 
 const moodBarColors: Record<string, ResourceColor> = {
@@ -158,6 +165,12 @@ struct MinePage {
     })
   }
 
+  private openTimeGallery(): void {
+    router.pushUrl({ url: 'pages/TimeGalleryPage' }).catch((): void => {
+      promptAction.showToast({ message: '请配置页面路由 pages/TimeGalleryPage' })
+    })
+  }
+
   private goHome(): void {
     router.back()
   }
@@ -272,6 +285,51 @@ struct MinePage {
         .fontColor('#6B7280')
     }
     .layoutWeight(1)
+  }
+
+  @Builder
+  private TimeGallery() {
+    Row() {
+      Column({ space: 6 }) {
+        Row({ space: 8 }) {
+          SymbolGlyph($r('sys.symbol.clock'))
+            .fontSize(20)
+            .fontColor(['#FFFFFF'])
+          Text('时光长廊')
+            .fontSize(17)
+            .fontWeight(FontWeight.Bold)
+            .fontColor('#FFFFFF')
+        }
+        Text(`${this.capsuleCount} 枚胶囊 · 你的校园回忆时间线`)
+          .fontSize(13)
+          .fontColor('#ffaeb3c2')
+      }
+      .alignItems(HorizontalAlign.Start)
+      .layoutWeight(1)
+
+      Blank()
+
+      Row({ space: 4 }) {
+        Text('进入')
+          .fontSize(14)
+          .fontColor('#ffffffff')
+        Image($r('app.media.signup_right'))
+          .width(12)
+          .fillColor('#ffffffff')
+      }
+      .padding({ left: 14, right: 14, top: 8, bottom: 8 })
+      .backgroundColor('rgba(255, 255, 255, 0.3)')
+      .borderRadius(20)
+    }
+    .width('100%')
+    .padding({ top: 18, bottom: 18, left: 16, right: 16 })
+    .linearGradient({
+      angle: 135,
+      colors: [['#3B82F6', 0.0], ['#60A5FA', 0.5], ['#93C5FD', 1.0]]
+    })
+    .borderRadius(20)
+    .shadow({ radius: 12, color: '#33000000', offsetX: 0, offsetY: 4 })
+    .onClick((): void => this.openTimeGallery())
   }
 
   @Builder
@@ -908,6 +966,7 @@ struct MinePage {
 
 
       this.ProfileCard()
+      this.TimeGallery()
       this.SubTabBar()
 
       if (this.subTab === MineSubTab.PUBLISH) {

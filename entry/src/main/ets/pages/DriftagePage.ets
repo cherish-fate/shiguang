@@ -21,15 +21,23 @@ interface FloatingCapsule {
 interface MoodStyle {
   color: string
   icon: string
+  glowColor: string
+  backgroundColor: string
+}
+
+interface Position {
+  baseX: number
+  baseY: number
 }
 
 const MOOD_STYLES: Record<string, MoodStyle> = {
-  '# 焦虑蓝': { color: '#ffeaf2fe', icon: '💙' },
-  '# 浪漫粉': { color: '#fffcecf4', icon: '🌸' },
-  '# 活力黄': { color: '#fffcf7e6', icon: '☀️' },
-  '# 极客紫': { color: '#fff6eefe', icon: '💡' },
-  '# 平静青': { color: '#fff0faf7', icon: '🌿' },
-  '# 孤独灰': { color: '#fff5f7fa', icon: '🌙' }
+  '焦虑': { color: '#ffeaf2fe', icon: '💙', glowColor: '#ff98bbf5', backgroundColor: '#ffd7e6fb' },
+  '浪漫': { color: '#fffcecf4', icon: '🌸', glowColor: '#fff8c9e8', backgroundColor: '#fffcecf4' },
+  '活力': { color: '#fffcf7e6', icon: '☀️', glowColor: '#fff5e689', backgroundColor: '#fffbf2d3' },
+  '快乐': { color: '#fffcf7e6', icon: '☀️', glowColor: '#fff5e689', backgroundColor: '#fffbf2d3' },
+  '极客': { color: '#fff6eefe', icon: '💡', glowColor: '#ffba7cf8', backgroundColor: '#ffe7d8f7' },
+  '平静': { color: '#fff0faf7', icon: '🌿', glowColor: '#ff9bf7d6', backgroundColor: '#ffd9fbf1' },
+  '孤独': { color: '#fff5f7fa', icon: '🌙', glowColor: '#ff858687', backgroundColor: '#ffcbcdd0' }
 }
 
 interface CapsuleDetail {
@@ -344,103 +352,55 @@ struct DriftagePage {
     comments: []
   }
 
-  private capsules: FloatingCapsule[] = [
-    {
-      id: '1',
-      emoji: '🌊',
-      baseX: 20,
-      baseY: 50,
-      amplitudeX: 12,
-      amplitudeY: 7,
-      omegaX: 0.0018,
-      omegaY: 0.0025,
-      phaseX: 0,
-      phaseY: 0.5,
-      glowColor: '#ff98bbf5',
-      backgroundColor: '#ffd7e6fb',
-      moodTag: '# 焦虑蓝'
-    },
-    {
-      id: '2',
-      emoji: '🌿',
-      baseX: 250,
-      baseY: 90,
-      amplitudeX: 10,
-      amplitudeY: 9,
-      omegaX: 0.0020,
-      omegaY: 0.0027,
-      phaseX: 1.2,
-      phaseY: 0.3,
-      glowColor: '#ff9bf7d6',
-      backgroundColor: '#ffd9fbf1',
-      moodTag: '# 平静'
-    },
-    {
-      id: '3',
-      emoji: '💡',
-      baseX: 30,
-      baseY: 270,
-      amplitudeX: 15,
-      amplitudeY: 6,
-      omegaX: 0.0015,
-      omegaY: 0.0030,
-      phaseX: 2.1,
-      phaseY: 1.0,
-      glowColor: '#ffba7cf8',
-      backgroundColor: '#ffe7d8f7',
-      moodTag: '# 极客紫'
-    },
-    {
-      id: '4',
-      emoji: '🌙',
-      baseX: 190,
-      baseY: 230,
-      amplitudeX: 11,
-      amplitudeY: 8,
-      omegaX: 0.0022,
-      omegaY: 0.0023,
-      phaseX: 0.8,
-      phaseY: 1.5,
-      glowColor: '#ff858687',
-      backgroundColor: '#ffcbcdd0',
-      moodTag: '# 孤独灰'
-    },
-    {
-      id: '5',
-      emoji: '☀️',
-      baseX: 240,
-      baseY: 370,
-      amplitudeX: 9,
-      amplitudeY: 7,
-      omegaX: 0.0017,
-      omegaY: 0.0028,
-      phaseX: 1.8,
-      phaseY: 0.7,
-      glowColor: '#fff5e689',
-      backgroundColor: '#fffbf2d3',
-      moodTag: '# 活力黄'
-    },
-    {
-      id: '6',
-      emoji: '🌸',
-      baseX: 90,
-      baseY: 410,
-      amplitudeX: 14,
-      amplitudeY: 6,
-      omegaX: 0.0020,
-      omegaY: 0.0026,
-      phaseX: 2.5,
-      phaseY: 1.2,
-      glowColor: '#fff8c9e8',
-      backgroundColor: '#fffcecf4',
-      moodTag: '# 浪漫粉'
-    }
-  ]
+  @State private capsules: FloatingCapsule[] = []
 
   aboutToAppear(): void {
     this.timerId = setInterval(() => {
       this.tick += 16
     }, 16)
+    this.loadCapsules()
+  }
+
+  private async loadCapsules(): Promise<void> {
+    try {
+      const result = await ApiService.listCapsules({})
+      const newCapsules: FloatingCapsule[] = []
+      const positions: Position[] = [
+        { baseX: 20, baseY: 50 },
+        { baseX: 250, baseY: 90 },
+        { baseX: 30, baseY: 270 },
+        { baseX: 190, baseY: 230 },
+        { baseX: 240, baseY: 370 },
+        { baseX: 90, baseY: 410 },
+        { baseX: 150, baseY: 150 },
+        { baseX: 60, baseY: 350 },
+        { baseX: 220, baseY: 450 },
+        { baseX: 40, baseY: 180 }
+      ]
+      for (let i = 0; i < result.list.length && i < positions.length; i++) {
+        const capsule = result.list[i]
+        const moodStyle = this.getMoodStyle(capsule.mood)
+        const pos = positions[i]
+        newCapsules.push({
+          id: String(capsule.id),
+          emoji: moodStyle.icon,
+          baseX: pos.baseX,
+          baseY: pos.baseY,
+          amplitudeX: 10 + Math.random() * 5,
+          amplitudeY: 5 + Math.random() * 4,
+          omegaX: 0.0015 + Math.random() * 0.0007,
+          omegaY: 0.0023 + Math.random() * 0.0005,
+          phaseX: Math.random() * Math.PI * 2,
+          phaseY: Math.random() * Math.PI * 2,
+          glowColor: moodStyle.glowColor,
+          backgroundColor: moodStyle.backgroundColor,
+          moodTag: capsule.mood
+        })
+      }
+      this.capsules = newCapsules
+    } catch (error) {
+      console.error('Failed to load capsules:', error)
+    }
   }
 
   aboutToDisappear(): void {
@@ -473,7 +433,7 @@ struct DriftagePage {
 
   private getMoodStyle(moodTag: string): MoodStyle {
     const style: MoodStyle | undefined = MOOD_STYLES[moodTag]
-    return style ?? { color: '#FFF8E7', icon: '🌙' }
+    return style ?? { color: '#FFF8E7', icon: '🌙', glowColor: '#ffcccccc', backgroundColor: '#FFF8E7' }
   }
 
   private async openCapsuleDetail(capsuleId: string): Promise<void> {

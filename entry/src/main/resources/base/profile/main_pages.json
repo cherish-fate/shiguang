@@ -5,8 +5,9 @@
     "pages/Index",
     "pages/PublishCapsulePage",
     "pages/MinePage",
-    "pages/ArTreasureMapPage",
     "pages/AccountSettingsPage",
-    "pages/DriftagePage"
+    "pages/DriftagePage",
+    "pages/TimeGalleryPage",
+    "pages/NotebookGeneratePage"
   ]
 }

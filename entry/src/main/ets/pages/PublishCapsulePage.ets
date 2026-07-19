@@ -221,6 +221,10 @@ struct PublishCapsulePage {
     this.attachments.splice(index, 1)
   }
 
+  private extractMoodName(moodTag: string): string {
+    return moodTag.replace(/^#\s*/, '').replace(/[蓝粉黄紫青灰]$/, '').trim()
+  }
+
   private async publishCapsule(): Promise<void> {
     if (!this.content.trim()) {
       promptAction.showToast({ message: '请输入内容' })
@@ -234,7 +238,7 @@ struct PublishCapsulePage {
       location: this.location.trim() || '未指定位置',
       latitude: 34.815278,
       longitude: 114.302222,
-      mood: this.selectedMood,
+      mood: this.extractMoodName(this.selectedMood),
       color: this.getMoodColor(this.selectedMood),
       images: this.attachments.length > 0 ? this.attachments : undefined,
       isPublic: !this.isPrivate

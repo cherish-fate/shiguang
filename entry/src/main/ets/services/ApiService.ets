@@ -161,6 +161,25 @@ export interface CapsuleListData {
 
 export type CreateCapsuleResponse = CapsuleData
 
+export interface UserCapsule {
+  id: string
+  moodTag: string
+  content: string
+  location: string
+  createdAt: string
+  likes: number
+  images: string[]
+}
+
+export interface UserStats {
+  capsuleCount: number
+}
+
+export interface UserCapsulesResult {
+  list: UserCapsule[]
+  userStats: UserStats
+}
+
 export interface ListCapsulesQuery {
   page?: number
   pageSize?: number
@@ -505,6 +524,27 @@ export interface PcPairConfirmResponse {
 export interface AiNarrativeResponse {
   text: string
   capsuleCount: number
+}
+
+export interface AiNotebookSection {
+  title: string
+  content: string
+}
+
+export interface AiNotebookRequest {
+  capsuleIds: string[]
+}
+
+export interface AiNotebookResponse {
+  title: string
+  date: string
+  intro: string
+  moodIcon: string
+  moodColor: string
+  moodBg: string
+  tags: string[]
+  sections: AiNotebookSection[]
+  closing: string
 }
 
 export interface AiEmotionItem {
@@ -888,6 +928,41 @@ export class ApiService {
     return await ApiService.request<CapsuleListData>('/capsule/my', http.RequestMethod.GET, undefined, opts)
   }
 
+  private static timestampToDateStr(ts: number): string {
+    const d = new Date(ts)
+    const year = d.getFullYear()
+    const month = (d.getMonth() + 1).toString().padStart(2, '0')
+    const day = d.getDate().toString().padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  static async getUserCapsules(query?: ListCapsulesQuery): Promise<UserCapsulesResult> {
+    const q: ListCapsulesQuery = query || {}
+    const result: CapsuleListData = await ApiService.getMyCapsules(q)
+    const list: UserCapsule[] = []
+    for (let i = 0; i < result.list.length; i++) {
+      const c: CapsuleData = result.list[i]
+      const item: UserCapsule = {
+        id: String(c.id),
+        moodTag: c.mood,
+        content: c.summary,
+        location: c.location,
+        createdAt: ApiService.timestampToDateStr(c.timestamp),
+        likes: 0,
+        images: []
+      }
+      list.push(item)
+    }
+    const userStats: UserStats = {
+      capsuleCount: result.pagination.total
+    }
+    const response: UserCapsulesResult = {
+      list: list,
+      userStats: userStats
+    }
+    return response
+  }
+
   static async exportCapsules(capsuleIds: number[]): Promise<ExportResponse> {
     const body: ExportRequest = { capsuleIds: capsuleIds }
     return await ApiService.request<ExportResponse>('/capsule/export', http.RequestMethod.POST, body)
@@ -903,7 +978,7 @@ export class ApiService {
   }
 
   static async getCapsulePopup(capsuleId: number): Promise<CapsulePopupData> {
-    const q: Record<string, string | number | boolean> = ApiService.makeQueryObj([['capsuleId', capsuleId]])
+    const q: Record<string, string | number | boolean> = ApiService.makeQueryObj([['id', capsuleId]])
     const opts: RequestOptions = ApiService.makeOptionsFromQuery(q)
     return await ApiService.request<CapsulePopupData>('/capsule/popup', http.RequestMethod.GET, undefined, opts)
   }
@@ -929,7 +1004,7 @@ export class ApiService {
     const p = page ?? 1
     const ps = pageSize ?? 20
     const q: Record<string, string | number | boolean> = ApiService.makeQueryObj([
-      ['capsuleId', capsuleId], ['page', p], ['pageSize', ps]
+      ['id', capsuleId], ['page', p], ['pageSize', ps]
     ])
     const opts: RequestOptions = ApiService.makeOptionsFromQuery(q)
     return await ApiService.request<RepliesResponse>('/capsule/replies', http.RequestMethod.GET, undefined, opts)
@@ -1046,6 +1121,37 @@ export class ApiService {
     body['capsuleIds'] = capsuleIds
     body['style'] = style
     return await ApiService.request<AiNarrativeResponse>('/ai/narrative', http.RequestMethod.POST, body)
+  }
+
+  static async generateNotebook(capsuleIds: string[], style?: string): Promise<AiNotebookResponse> {
+    const numericIds: number[] = []
+    for (let i = 0; i < capsuleIds.length; i++) {
+      const n = parseInt(capsuleIds[i])
+      if (!isNaN(n)) {
+        numericIds.push(n)
+      }
+    }
+    const narrative: AiNarrativeResponse = await ApiService.generateNarrative(numericIds, style)
+    const today = new Date()
+    const dateStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`
+    const sections: AiNotebookSection[] = [
+      { title: '时光絮语', content: narrative.text },
+      { title: '情绪足迹', content: `在这段时光里，你记录了 ${narrative.capsuleCount} 枚胶囊，每一枚都是独一无二的青春印记。` },
+      { title: '温暖瞬间', content: '那些被你认真记录的瞬间，终将成为回忆里最亮的星。愿你继续保持对生活的热爱，把平凡日子过成诗。' },
+      { title: '未来期许', content: '愿你走出半生，归来仍是少年。愿你眼中有光，心中有爱，脚下有路。' }
+    ]
+    const result: AiNotebookResponse = {
+      title: '拾光手账',
+      date: dateStr,
+      intro: narrative.text,
+      moodIcon: '✨',
+      moodColor: '#3B82F6',
+      moodBg: '#EFF6FF',
+      tags: ['平静', '快乐', '浪漫'],
+      sections: sections,
+      closing: '—— 拾光印记，记录你的每一刻感动 ——'
+    }
+    return result
   }
 
   static async analyzeEmotion(capsuleIds?: number[], period?: string): Promise<AiEmotionItem[]> {
