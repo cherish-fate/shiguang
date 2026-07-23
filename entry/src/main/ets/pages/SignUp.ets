@@ -318,7 +318,7 @@ struct RegisterPage {
       Image(icon)
         .width(22)
         .margin({ left: 10 })
-      TextInput({ text:this.nickname, placeholder: plholder })
+      TextInput({ text: $$this.nickname, placeholder: plholder })
         .layoutWeight(1)
         .height(52)
         .fontSize(16)
