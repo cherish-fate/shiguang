@@ -138,7 +138,7 @@ struct RegisterPage {
       )
       ApiService.setAuthToken(response.token)
       promptAction.showToast({ message: '注册成功' })
-      router.back()
+      router.replaceUrl({ url: 'pages/Index' })
     } catch (error) {
       console.error('Failed to register:', error)
     } finally {
