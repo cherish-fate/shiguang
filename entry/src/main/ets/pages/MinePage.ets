@@ -1,6 +1,6 @@
 import { router, promptAction } from '@kit.ArkUI'
 import { AuthState } from '../services/UserSessions'
-import { ApiService, UserProfile, PublishedCapsulesResponse, FavoriteCapsulesResponse, EmotionDistributionResponse, EmotionDistributionItem, WeeklyReportResponse, WeekRange, MoodTrend, PublishedCapsuleItem, FavoriteCapsuleItem } from '../services/ApiService'
+import { ApiService, UserProfile, PublishedCapsulesResponse, FavoriteCapsulesResponse, EmotionDistributionResponse, EmotionDistributionItem, WeeklyReportResponse, WeekRange, MoodTrend, PublishedCapsuleItem, FavoriteCapsuleItem, UserCapsulesResult } from '../services/ApiService'
 import { LoginTheme } from './models/ThemeConstants'
 import { MainTabBar, MainTabBarSlot } from './components/MainTabBar'
 
@@ -12,37 +12,41 @@ enum MineSubTab {
   FOOTPRINTS = 3
 }
 
-interface MoodTagInfo {
+interface MoodChipInfo {
   label: string
-  emoji: Resource
-  bg: ResourceColor
+  bg: string
+  fontColor: string
+  icon: string
 }
 
-const moodTagMap: Record<string, MoodTagInfo> = {
-  'anxiety': { label: '焦虑', emoji: $r('app.media.mine_anxiety'), bg: '#F3E8FF' },
-  'romance': { label: '浪漫', emoji: $r('app.media.mine_romance'), bg: '#FCE7F3' },
-  'vitality': { label: '活力', emoji: $r('app.media.mine_happy'), bg: '#FEF9C3' },
-  'geek': { label: '极客', emoji: $r('app.media.mine_calm'), bg: '#DBEAFE' },
-  'calm': { label: '平静', emoji: $r('app.media.mine_calm'), bg: '#DBEAFE' },
-  'lone': { label: '孤独', emoji: $r('app.media.mine_alone'), bg: '#F3F4F6' },
-  'happy': { label: '快乐', emoji: $r('app.media.mine_happy'), bg: '#FEF9C3' },
-  '焦虑': { label: '焦虑', emoji: $r('app.media.mine_anxiety'), bg: '#F3E8FF' },
-  '浪漫': { label: '浪漫', emoji: $r('app.media.mine_romance'), bg: '#FCE7F3' },
-  '活力': { label: '活力', emoji: $r('app.media.mine_happy'), bg: '#FEF9C3' },
-  '极客': { label: '极客', emoji: $r('app.media.mine_calm'), bg: '#DBEAFE' },
-  '平静': { label: '平静', emoji: $r('app.media.mine_calm'), bg: '#DBEAFE' },
-  '孤独': { label: '孤独', emoji: $r('app.media.mine_alone'), bg: '#F3F4F6' },
-  '快乐': { label: '快乐', emoji: $r('app.media.mine_happy'), bg: '#FEF9C3' }
+const moodChipMap: Record<string, MoodChipInfo> = {
+  'anxiety': { label: '焦虑蓝', bg: '#FFEAF2FE', fontColor: '#2563EB', icon: '💙' },
+  'romance': { label: '浪漫粉', bg: '#FFFCE7F3', fontColor: '#DB2777', icon: '🌸' },
+  'vitality': { label: '活力黄', bg: '#FFFEF3C7', fontColor: '#D97706', icon: '☀️' },
+  'geek': { label: '极客紫', bg: '#FFF3E8FF', fontColor: '#7C3AED', icon: '💡' },
+  'calm': { label: '平静青', bg: '#FFF0FDF4', fontColor: '#0D9488', icon: '🌿' },
+  'lone': { label: '孤独灰', bg: '#FFF3F4F6', fontColor: '#475569', icon: '🌙' },
+  'happy': { label: '快乐', bg: '#FFFEF9C3', fontColor: '#CA8A04', icon: '😊' }
 }
 
-const moodBarColors: Record<string, ResourceColor> = {
-  '平静': '#3B82F6',
-  '快乐': '#fff5d161',
-  '焦虑': '#ffbf83f5',
-  '浪漫': '#fff789bf',
-  '孤独': '#9CA3AF',
-  '活力': '#FBBF24',
-  '极客': '#8B5CF6'
+const chipLabelToKeyMap: Record<string, string> = {
+  '焦虑蓝': 'anxiety',
+  '浪漫粉': 'romance',
+  '活力黄': 'vitality',
+  '极客紫': 'geek',
+  '平静青': 'calm',
+  '孤独灰': 'lone',
+  '快乐': 'happy'
+}
+
+const chineseMoodToChipKeyMap: Record<string, string> = {
+  '焦虑': 'anxiety',
+  '浪漫': 'romance',
+  '活力': 'vitality',
+  '极客': 'geek',
+  '平静': 'calm',
+  '孤独': 'lone',
+  '快乐': 'happy'
 }
 
 @Entry
@@ -80,7 +84,8 @@ struct MinePage {
         ApiService.getPublishedCapsules(),
         ApiService.getFavoriteCapsules(),
         ApiService.getEmotionDistribution(),
-        ApiService.getWeeklyReport()
+        ApiService.getWeeklyReport(),
+        ApiService.getUserCapsules({})
       ])
 
       this.userProfile = results[0] as UserProfile
@@ -88,7 +93,8 @@ struct MinePage {
       this.favoriteCapsules = results[2] as FavoriteCapsulesResponse
       const distResp = results[3] as EmotionDistributionResponse
       this.emotionDistribution = distResp.distribution
-      this.capsuleCount = distResp.totalCapsules
+      // 胶囊数与时光长廊保持一致，使用 /capsule/my 接口的 userStats.capsuleCount
+      this.capsuleCount = (results[5] as UserCapsulesResult).userStats.capsuleCount
       this.favoriteCount = (results[2] as FavoriteCapsulesResponse).pagination.total
       this.locationCount = 0
       this.weeklyReport = results[4] as WeeklyReportResponse
@@ -111,9 +117,9 @@ struct MinePage {
       phone: '',
       avatar: ''
     } as UserProfile
-    this.capsuleCount = 4
-    this.favoriteCount = 4
-    this.locationCount = 8
+    this.capsuleCount = 0
+    this.favoriteCount = 0
+    this.locationCount = 0
     this.emotionDistribution = [
       { mood: '平静', count: 12, percentage: 35 } as EmotionDistributionItem,
       { mood: '快乐', count: 8, percentage: 24 } as EmotionDistributionItem,
@@ -130,18 +136,37 @@ struct MinePage {
     } as WeeklyReportResponse
   }
 
-  private getMoodInfo(moodTag: string): MoodTagInfo {
-    return moodTagMap[moodTag.toLowerCase()] || { label: moodTag, emoji: $r('app.media.mine_calm'), bg: '#DBEAFE' }
+  /** 根据情绪标签返回 chip 样式（支持英文 key、中文情绪、带颜色后缀的中文） */
+  private getMoodChipInfo(moodTag: string): MoodChipInfo {
+    const cleanTag = moodTag.replace(/^#\s*/, '').trim()
+    const keyFromLabel = chipLabelToKeyMap[cleanTag]
+    if (keyFromLabel && moodChipMap[keyFromLabel]) {
+      return moodChipMap[keyFromLabel]
+    }
+    const keyFromChinese = chineseMoodToChipKeyMap[cleanTag]
+    if (keyFromChinese && moodChipMap[keyFromChinese]) {
+      return moodChipMap[keyFromChinese]
+    }
+    const lower = moodTag.toLowerCase()
+    if (moodChipMap[lower]) {
+      return moodChipMap[lower]
+    }
+    return { label: cleanTag || moodTag, bg: '#FFEAF2FE', fontColor: '#2563EB', icon: '💙' }
   }
 
-  private getMoodEmoji(label: string): Resource {
-    const moodInfo = moodTagMap[label.toLowerCase()]
-    return moodInfo ? moodInfo.emoji : $r('app.media.mine_calm')
-  }
-
-  private getMoodBg(label: string): ResourceColor {
-    const moodInfo = moodTagMap[label.toLowerCase()]
-    return moodInfo ? moodInfo.bg : '#DBEAFE'
+  @Builder
+  private MoodTagChip(moodTag: string) {
+    Row({ space: 5 }) {
+      Text(this.getMoodChipInfo(moodTag).icon)
+        .fontSize(13)
+      Text(this.getMoodChipInfo(moodTag).label)
+        .fontSize(12)
+        .fontColor(this.getMoodChipInfo(moodTag).fontColor)
+        .fontWeight(FontWeight.Medium)
+    }
+    .padding({ left: 10, right: 10, top: 5, bottom: 5 })
+    .backgroundColor(this.getMoodChipInfo(moodTag).bg)
+    .borderRadius(14)
   }
 
   private formatTimeAgo(dateStr: string): string {
@@ -231,15 +256,17 @@ struct MinePage {
             .fontColor('#6B7280')
           Flex({ wrap: FlexWrap.Wrap }) {
             ForEach(this.topMoodTags, (tag: string) => {
-              Row() {
-                Image(this.getMoodEmoji(tag))
-                  .width(18)
-                Text(tag)
-                  .fontSize(11)
+              Row({ space: 3 }) {
+                Text(this.getMoodChipInfo(tag).icon)
+                  .fontSize(13)
+                Text(this.getPureMoodName(tag))
+                  .fontSize(12)
+                  .fontColor(this.getMoodChipInfo(tag).fontColor)
+                  .fontWeight(FontWeight.Medium)
               }
-              .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-              .backgroundColor(this.getMoodBg(tag))
-              .borderRadius(10)
+              .padding({ left: 10, right: 10, top: 5, bottom: 5 })
+              .backgroundColor(this.getMoodChipInfo(tag).bg)
+              .borderRadius(14)
               .margin({ right: 6, bottom: 4 })
             }, (tag: string) => tag)
           }
@@ -368,16 +395,7 @@ struct MinePage {
   private PublishedCapsuleCard(item: PublishedCapsuleItem) {
     Column({ space: 8 }) {
       Row() {
-        Row() {
-          Image(this.getMoodEmoji(item.mood))
-            .width(18)
-          Text(item.mood)
-            .fontSize(11)
-        }
-        .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-        .backgroundColor(this.getMoodBg(item.mood))
-        .borderRadius(10)
-        .margin({ right: 6, bottom: 4 })
+        this.MoodTagChip(item.mood)
         Blank()
         SymbolGlyph(item.isPrivate ? $r('sys.symbol.lock_fill') : $r('app.media.default_avater'))
           .fontSize(16)
@@ -457,12 +475,39 @@ struct MinePage {
   }
 
   private getMoodLabel(moodTag: string): string {
-    const moodInfo = moodTagMap[moodTag.toLowerCase()]
-    return moodInfo ? moodInfo.label : moodTag
+    return this.getMoodChipInfo(moodTag).label
+  }
+
+  /** 从情绪标签中提取纯情绪名（去掉颜色后缀，如"焦虑蓝"→"焦虑"） */
+  private getPureMoodName(moodTag: string): string {
+    const cleanTag = moodTag.replace(/^#\s*/, '').trim()
+    const keyFromChinese = chineseMoodToChipKeyMap[cleanTag]
+    if (keyFromChinese) {
+      return cleanTag
+    }
+    const keyFromLabel = chipLabelToKeyMap[cleanTag]
+    if (keyFromLabel) {
+      const entries = Object.entries(chineseMoodToChipKeyMap)
+      for (let i = 0; i < entries.length; i++) {
+        if (entries[i][1] === keyFromLabel) {
+          return entries[i][0]
+        }
+      }
+    }
+    const lower = moodTag.toLowerCase()
+    if (moodChipMap[lower]) {
+      const entries = Object.entries(chineseMoodToChipKeyMap)
+      for (let i = 0; i < entries.length; i++) {
+        if (entries[i][1] === lower) {
+          return entries[i][0]
+        }
+      }
+    }
+    return cleanTag.replace(/[蓝粉黄紫青灰]$/, '').trim()
   }
 
   private getMoodBarColor(label: string): ResourceColor {
-    return moodBarColors[label] || '#3B82F6'
+    return this.getMoodChipInfo(label).fontColor
   }
 
   @Builder
@@ -672,10 +717,10 @@ struct MinePage {
             Text(`${item.mood} (${item.count})`)
               .fontSize(12)
               .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-              .backgroundColor(this.getMoodBg(item.mood))
+              .backgroundColor(this.getMoodChipInfo(item.mood).bg)
               .borderRadius(12)
               .margin({ right: 8, bottom: 8 })
-              .fontColor('#374151')
+              .fontColor(this.getMoodChipInfo(item.mood).fontColor)
           }, (item: EmotionDistributionItem, i: number) => `tag_${i}`)
         }
         .width('100%')
@@ -738,16 +783,7 @@ struct MinePage {
   private FavoriteCapsuleCard(item: FavoriteCapsuleItem) {
     Column({ space: 8 }) {
       Row() {
-        Row() {
-          Image(this.getMoodEmoji(item.mood))
-            .width(18)
-          Text(item.mood)
-            .fontSize(11)
-        }
-        .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-        .backgroundColor(this.getMoodBg(item.mood))
-        .borderRadius(10)
-        .margin({ right: 6, bottom: 4 })
+        this.MoodTagChip(item.mood)
         Blank()
         SymbolGlyph(item.isPrivate ? $r('sys.symbol.lock_fill') : $r('app.media.default_avater'))
           .fontSize(16)

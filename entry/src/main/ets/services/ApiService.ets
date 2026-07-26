@@ -586,7 +586,7 @@ export interface RequestOptions {
 }
 
 export class ApiService {
-  private static baseUrl: string = 'http://192.168.0.234:3000'
+  private static baseUrl: string = 'http://192.168.0.106:3000'
   private static timeoutMs: number = 10000
   private static authToken: string = ''
 
@@ -978,7 +978,7 @@ export class ApiService {
   }
 
   static async getCapsulePopup(capsuleId: number): Promise<CapsulePopupData> {
-    const q: Record<string, string | number | boolean> = ApiService.makeQueryObj([['id', capsuleId]])
+    const q: Record<string, string | number | boolean> = ApiService.makeQueryObj([['capsuleId', capsuleId]])
     const opts: RequestOptions = ApiService.makeOptionsFromQuery(q)
     return await ApiService.request<CapsulePopupData>('/capsule/popup', http.RequestMethod.GET, undefined, opts)
   }
@@ -1004,7 +1004,7 @@ export class ApiService {
     const p = page ?? 1
     const ps = pageSize ?? 20
     const q: Record<string, string | number | boolean> = ApiService.makeQueryObj([
-      ['id', capsuleId], ['page', p], ['pageSize', ps]
+      ['capsuleId', capsuleId], ['page', p], ['pageSize', ps]
     ])
     const opts: RequestOptions = ApiService.makeOptionsFromQuery(q)
     return await ApiService.request<RepliesResponse>('/capsule/replies', http.RequestMethod.GET, undefined, opts)

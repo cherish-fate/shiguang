@@ -238,6 +238,7 @@ struct TimeGalleryPage {
   @State private isLoading: boolean = true
   @State private isEditMode: boolean = false
   @State private selectedIds: Set<string> = new Set()
+  @State private capsuleCount: number = 0
   private dialogController: CustomDialogController = new CustomDialogController({
     builder: TimeCapsuleDetailDialog({
       capsule: null
@@ -257,10 +258,12 @@ struct TimeGalleryPage {
       const result = await ApiService.getUserCapsules({})
       this.allGroups = this.groupByMonth(result.list)
       this.displayedGroups = this.allGroups
+      this.capsuleCount = result.userStats.capsuleCount
     } catch (error) {
       console.error('Failed to load time gallery:', JSON.stringify(error))
       this.allGroups = []
       this.displayedGroups = []
+      this.capsuleCount = 0
     } finally {
       this.isLoading = false
     }
@@ -510,7 +513,7 @@ struct TimeGalleryPage {
         .padding({ top: 8, left: 8, right: 8, bottom: 4 })
 
         Column() {
-          Text('6 枚胶囊 · 长按多选生成手账')
+          Text(`${this.capsuleCount} 枚胶囊 · 长按多选生成手账`)
             .fontSize(13)
             .fontColor('#6B7280')
         }

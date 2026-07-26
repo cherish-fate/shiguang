@@ -232,7 +232,7 @@ struct PublishCapsulePage {
     }
     this.submitting = true
     const request: CreateCapsuleRequest = {
-      campus: 'jinming',
+      campus: 'jm',
       title: this.content.trim().substring(0, 50),
       summary: this.content.trim(),
       location: this.location.trim() || '未指定位置',
@@ -246,7 +246,7 @@ struct PublishCapsulePage {
     try {
       await ApiService.createCapsule(request)
       promptAction.showToast({ message: '发布成功' })
-      router.pushUrl({ url: 'pages/ArTreasureMapPage' })
+      router.pushUrl({ url: 'pages/DriftagePage' })
     } catch (_) {
       // Error toast is handled in ApiService.
     } finally {

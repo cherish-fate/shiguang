@@ -65,7 +65,10 @@ import type {
   FavoriteCapsuleItem,
   NearbyCapsuleItem,
   MapCapsuleItem,
-  ApiConfig
+  ApiConfig,
+  UserCapsule,
+  UserStats,
+  UserCapsulesResult
 } from './ApiService'
 
 export type {
@@ -135,7 +138,10 @@ export type {
   FavoriteCapsuleItem,
   NearbyCapsuleItem,
   MapCapsuleItem,
-  ApiConfig
+  ApiConfig,
+  UserCapsule,
+  UserStats,
+  UserCapsulesResult
 }
 
 const MOCK_PHONE: string = '12345678901'
@@ -535,6 +541,41 @@ export class ApiService {
 
   static async getMyCapsules(query: ListCapsulesQuery): Promise<CapsuleListData> {
     return ApiService.listCapsules(query)
+  }
+
+  private static timestampToDateStr(ts: number): string {
+    const d = new Date(ts)
+    const year = d.getFullYear()
+    const month = (d.getMonth() + 1).toString().padStart(2, '0')
+    const day = d.getDate().toString().padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  static async getUserCapsules(query?: ListCapsulesQuery): Promise<UserCapsulesResult> {
+    const q: ListCapsulesQuery = query || {}
+    const result: CapsuleListData = await ApiService.getMyCapsules(q)
+    const list: UserCapsule[] = []
+    for (let i = 0; i < result.list.length; i++) {
+      const c: CapsuleData = result.list[i]
+      const item: UserCapsule = {
+        id: String(c.id),
+        moodTag: c.mood,
+        content: c.summary,
+        location: c.location,
+        createdAt: ApiService.timestampToDateStr(c.timestamp),
+        likes: 0,
+        images: []
+      }
+      list.push(item)
+    }
+    const userStats: UserStats = {
+      capsuleCount: result.pagination.total
+    }
+    const response: UserCapsulesResult = {
+      list: list,
+      userStats: userStats
+    }
+    return response
   }
 
   static async exportCapsules(_: number[]): Promise<ExportResponse> {

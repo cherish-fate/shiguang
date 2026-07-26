@@ -105,7 +105,7 @@ struct LoginPage {
       )
       ApiService.setAuthToken(response.token)
       promptAction.showToast({ message: '登录成功' })
-      router.back()
+      router.replaceUrl({url:'pages/Index'})
     } catch (error) {
       console.error('Failed to login:', error)
     } finally {
