@@ -831,58 +831,6 @@ struct MinePage {
   }
 
   @Builder
-  private DistributedCard() {
-    Column({ space: 12 }) {
-      Row({ space: 6 }) {
-        SymbolGlyph($r('sys.symbol.link'))
-          .fontSize(14)
-          .fontColor(['#64748B'])
-        Text('鸿蒙分布式')
-          .fontSize(14)
-          .fontColor('#64748B')
-      }
-      .width('100%')
-
-      Row({ space: 12 }) {
-        Column() {
-          Image($r('app.media.signup_compu'))
-            .width(22)
-            .fillColor('#94A3B8')
-        }
-        .width(48)
-        .height(48)
-        .backgroundColor('#F1F5F9')
-        .borderRadius(12)
-        .justifyContent(FlexAlign.Center)
-
-        Column({ space: 4 }) {
-          Text('PC 端连接')
-            .fontSize(15)
-            .fontColor('#111827')
-          Text('未连接')
-            .fontSize(12)
-            .fontColor('#9CA3AF')
-        }
-        .layoutWeight(1)
-        .alignItems(HorizontalAlign.Start)
-
-        Image($r('app.media.signup_nowife'))
-          .width(22)
-          .fillColor('#8a8a8a')
-      }
-      .width('100%')
-      .padding(14)
-      .borderRadius(14)
-    }
-    .width('100%')
-    .padding(16)
-    .backgroundColor(Color.White)
-    .borderRadius(20)
-    .alignItems(HorizontalAlign.Start)
-    .shadow({ radius: 16, color: '#33000000', offsetX: 0, offsetY: 6 })
-  }
-
-  @Builder
   private SettingsCard() {
     Column() {
       this.SettingToggleRow()
@@ -1015,7 +963,6 @@ struct MinePage {
         this.FootprintsSection()
       }
 
-      this.DistributedCard()
       this.SettingsCard()
       this.LogoutBlock()
       this.FooterVersion()
